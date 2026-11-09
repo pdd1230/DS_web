@@ -8,31 +8,78 @@ config.ps1
 *.p12
 *.pfx
 
-# IntelliJ 실행 설정
+# IntelliJ 설정
 .idea/
 .run/
 *.iml
-pip
-# 로컬 실행 자료
-storage/
-logs/
-backups/
+
+# Python 가상환경 및 캐시 (하위 폴더에도 적용)
 .venv/
-python_service/.venv/
 __pycache__/
 .pytest_cache/
-*.pyc
-web/.gradle/
-web/build/
-build-verification/
+*.py[cod]
 
-# 원본 사진과 기존 실행 결과
-legacy/data/
-legacy/outputs/
-legacy/reviews/
+# Gradle 캐시 및 빌드 결과
+/web/.gradle/
+/web/build/
+/build-verification/
+
+# 로컬 실행 데이터·로그·백업
+/storage/
+/logs/
+/backups/
+/db-dumps/
+
+# 학생 원본 사진·정답·기존 결과·검수 자료
+# 아래 자료는 clone 후 별도 복원해야 합니다.
+# 빈 폴더만 만들어서는 기준 사진 등록·기존 자료 테스트가 동작하지 않습니다.
+/legacy/data/
+/legacy/outputs/
+/legacy/reviews/
+/legacy/csv_backup/
 
 # 학생 이름이 포함된 회의록
-legacy/*회의록*
+/legacy/*회의록*
 
-# DB 덤프는 별도 폴더로 관리
-db-dumps/
+# 모든 폴더의 로그 및 순환 로그
+*.[lL][oO][gG]
+*.[lL][oO][gG].*
+
+# 모든 폴더의 이미지
+*.[jJ][pP][gG]
+*.[jJ][pP][eE][gG]
+*.[pP][nN][gG]
+*.[bB][mM][pP]
+*.[gG][iI][fF]
+*.[wW][eE][bB][pP]
+*.[tT][iI][fF]
+*.[tT][iI][fF][fF]
+*.[hH][eE][iI][cC]
+*.[hH][eE][iI][fF]
+
+# 향후 제공할 배포 가능한 샘플·테스트 이미지 예외
+# 파일을 자동 생성하거나 기존 legacy 자료를 복원하는 설정은 아닙니다.
+!/samples/**/*.[jJ][pP][gG]
+!/samples/**/*.[jJ][pP][eE][gG]
+!/samples/**/*.[pP][nN][gG]
+!/python_service/tests/fixtures/**/*.[jJ][pP][gG]
+!/python_service/tests/fixtures/**/*.[jJ][pP][eE][gG]
+!/python_service/tests/fixtures/**/*.[pP][nN][gG]
+!/web/src/test/resources/fixtures/**/*.[jJ][pP][gG]
+!/web/src/test/resources/fixtures/**/*.[jJ][pP][eE][gG]
+!/web/src/test/resources/fixtures/**/*.[pP][nN][gG]
+
+# 웹 화면에 필요한 정적 이미지 예외
+!/web/src/main/resources/static/images/**
+
+# 필수 파일 보존
+# *.jar, *.pt를 일괄 제외하지 마세요.
+!/web/gradle/wrapper/gradle-wrapper.jar
+!/web/gradle/wrapper/gradle-wrapper.properties
+!/web/gradlew
+!/web/gradlew.bat
+!/legacy/shared/models/yolov8n-face-lindevs.pt
+!/python_service/requirements.txt
+!/python_service/requirements-test.txt
+!/python_service/requirements-lock.txt
+!/config.ps1.example

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     DeepSight의 Python 추론 서버와 Spring Boot 웹 서버를 순서대로 시작합니다.
 
@@ -6,6 +6,9 @@
     설정·실행 환경·포트·JAR·DB 연결을 확인한 뒤 서버를 시작합니다.
     Python의 준비 상태를 먼저 확인하고 Spring Boot를 실행합니다.
     시작 중 오류가 발생하면 이 스크립트가 시작한 서버 프로세스를 종료합니다.
+
+.PARAMETER Rebuild
+    기존 JAR가 있어도 Gradle bootJar를 다시 실행합니다.
 
 .PARAMETER NoBrowser
     서버는 실행하되 브라우저를 자동으로 열지 않습니다.
@@ -18,12 +21,14 @@
 
 .NOTES
     파일 위치: 프로젝트 루트\scripts\Start.ps1
-    사전 준비: Setup.ps1 실행, config.ps1 설정, DB 준비, IntelliJ에서 bootJar 실행
-    이 스크립트는 Gradle 빌드를 수행하지 않고 기존 JAR를 실행합니다.
+    사전 준비: Setup.ps1 실행, config.ps1 설정, DB 준비
+    기존 JAR는 재사용하고, 없거나 -Rebuild 지정 시 Gradle로 빌드합니다.
+    Windows PowerShell 5.1에서 한글을 읽도록 UTF-8 BOM으로 저장합니다.
 #>
 
 param(
-    [switch]$NoBrowser
+    [switch]$NoBrowser,
+    [switch]$Rebuild
 )
 
 # 공통 환경 스크립트를 현재 범위에 불러옵니다(점 소싱).
@@ -35,7 +40,7 @@ Set-Location $ProjectRoot
 # 1. 설정값 및 Python 실행 파일 확인
 # ============================================================
 # DB 비밀번호가 기본 안내값 그대로인지 확인합니다.
-if ($env:DS_DB_PASSWORD -eq 'CHANGE_ME') {
+if ($env:DS_DB_PASSWORD -in @('CHANGE_ME', 'change me')) {
     throw 'Enter your DB password in config.ps1 first.'
 }
 
@@ -48,6 +53,24 @@ if (!(Test-Path $PythonExe)) {
     throw 'Run scripts\Setup.ps1 first.'
 }
 
+# 설정 누락과 잘못된 포트는 서버 실행 전에 확인합니다.
+foreach ($Name in @('DS_DB_HOST', 'DS_DB_PORT', 'DS_DB_NAME', 'DS_DB_USER', 'DS_WEB_PORT', 'DS_PYTHON_PORT')) {
+    $Value = [Environment]::GetEnvironmentVariable($Name, 'Process')
+    if ([string]::IsNullOrWhiteSpace($Value)) {
+        throw "Required setting missing: $Name. Check config.ps1."
+    }
+}
+foreach ($Name in @('DS_DB_PORT', 'DS_WEB_PORT', 'DS_PYTHON_PORT')) {
+    $PortValue = 0
+    $Value = [Environment]::GetEnvironmentVariable($Name, 'Process')
+    if (![int]::TryParse($Value, [ref]$PortValue) -or $PortValue -lt 1 -or $PortValue -gt 65535) {
+        throw "Invalid port setting: $Name. Use an integer from 1 to 65535."
+    }
+}
+if ([int]$env:DS_WEB_PORT -eq [int]$env:DS_PYTHON_PORT) {
+    throw 'DS_WEB_PORT and DS_PYTHON_PORT must be different.'
+}
+
 # 로그 폴더를 준비합니다. 이미 존재해도 그대로 사용합니다.
 New-Item -ItemType Directory -Path (Join-Path $ProjectRoot 'logs') `
     -Force | Out-Null
@@ -55,6 +78,12 @@ New-Item -ItemType Directory -Path (Join-Path $ProjectRoot 'logs') `
 # ============================================================
 # 2. Java 실행 가능 여부 및 Python 버전 확인
 # ============================================================
+foreach ($CommandName in @('java', 'javac')) {
+    if (!(Get-Command $CommandName -CommandType Application -ErrorAction SilentlyContinue)) {
+        throw "$CommandName is missing from PATH. Install/configure JDK 17 first."
+    }
+}
+
 # javac 실행 성공 여부를 확인합니다. Java 버전이 17인지 직접 비교하지는 않습니다.
 & javac -version
 if ($LASTEXITCODE) {
@@ -69,6 +98,29 @@ if ($LASTEXITCODE) {
 
 if (($PythonVersion | Out-String).Trim() -ne '3.11.9') {
     throw 'The project venv must use Python 3.11.9.'
+}
+
+# 다른 가상환경이 활성화되어 있어도 프로젝트 전용 Python으로 검사합니다.
+Write-Host "Using Python: $PythonExe"
+& $PythonExe -c 'import fastapi, uvicorn, numpy, cv2, PIL, ultralytics, torch, torchvision'
+if ($LASTEXITCODE) {
+    throw 'Python package import failed. Run scripts\Setup.ps1 and review the error above.'
+}
+
+# 모든 실험의 결과 이력에 원본 소스·모델 해시를 기록하므로 함께 필요합니다.
+foreach ($RelativePath in @(
+    'python_service\app.py',
+    'python_service\core.py',
+    'python_service\runner.py',
+    'legacy\source\main.py',
+    'legacy\source\main_1.py',
+    'legacy\source\main_1_baseline.py',
+    'legacy\scripts\build_deepsight_reports.py',
+    'legacy\shared\models\yolov8n-face-lindevs.pt'
+)) {
+    if (!(Test-Path (Join-Path $ProjectRoot $RelativePath) -PathType Leaf)) {
+        throw "Required project file missing: $RelativePath. Restore it before starting."
+    }
 }
 
 # ============================================================
@@ -89,16 +141,60 @@ foreach ($Port in @($env:DS_WEB_PORT, $env:DS_PYTHON_PORT)) {
 }
 
 # ============================================================
-# 4. IntelliJ에서 미리 빌드한 JAR 파일 확인
+# 4. 기존 JAR 재사용 또는 최초/명시적 빌드
 # ============================================================
-# gradlew.bat은 실행하지 않습니다. 아래 경로의 JAR가 미리 준비되어 있어야 합니다.
-$Jar = Join-Path $ProjectRoot 'web\build\libs\deepsight-web-1.0.0.jar'
-
-if (!(Test-Path $Jar -PathType Leaf)) {
-    throw 'JAR file missing. Run bootJar in IntelliJ first.'
+$WebDirectory = Join-Path $ProjectRoot 'web'
+$Jar = Join-Path $WebDirectory 'build\libs\deepsight-web-1.0.0.jar'
+$NeedsBuild = $Rebuild -or !(Test-Path $Jar -PathType Leaf)
+if (!$NeedsBuild -and (Get-Item $Jar).Length -eq 0) {
+    $NeedsBuild = $true
 }
 
-Write-Host "Using built JAR: $Jar"
+if ($NeedsBuild) {
+    # clone 후 web/build가 없어도 Gradle이 생성합니다.
+    foreach ($RelativePath in @('gradlew.bat', 'build.gradle', 'settings.gradle',
+        'gradle\wrapper\gradle-wrapper.jar', 'gradle\wrapper\gradle-wrapper.properties')) {
+        if (!(Test-Path (Join-Path $WebDirectory $RelativePath) -PathType Leaf)) {
+            throw "Build file missing: web\$RelativePath. Check the repository contents."
+        }
+    }
+
+    if ($Rebuild) {
+        Write-Host 'Rebuilding Spring Boot JAR (-Rebuild)...'
+    }
+    else {
+        Write-Host 'No usable JAR found. Building Spring Boot JAR...'
+    }
+
+    # 호출 위치와 관계없이 web을 기준으로 빌드하고 원래 위치로 복귀합니다.
+    Push-Location $WebDirectory
+    try {
+        & .\gradlew.bat --no-daemon bootJar
+        if ($LASTEXITCODE -ne 0) {
+            throw "Gradle bootJar failed (exit code: $LASTEXITCODE)."
+        }
+    }
+    catch {
+        # 빌드 실패 시 남아 있는 이전 JAR로 조용히 실행하지 않습니다.
+        throw ("Build failed: " + $_.Exception.Message +
+            ' Check the Gradle output, JDK 17, network access, and local execution policy. ' +
+            'If command execution is blocked, build bootJar in IntelliJ, then run Start.ps1 without -Rebuild.')
+    }
+    finally {
+        Pop-Location
+    }
+
+    if (!(Test-Path $Jar -PathType Leaf)) {
+        throw "Build completed but the expected JAR is missing: $Jar. Check web/build.gradle."
+    }
+    if ((Get-Item $Jar).Length -eq 0) {
+        throw "The built JAR is empty: $Jar. Rebuild it before starting."
+    }
+}
+else {
+    Write-Host 'Reusing existing JAR. Use -Rebuild after changing Java code or web resources.'
+}
+Write-Host "Using JAR: $Jar"
 
 # ============================================================
 # 5. DB 서버의 TCP 접속 가능 여부 확인
@@ -108,7 +204,16 @@ Write-Host "Using built JAR: $Jar"
 $DbCheck = New-Object System.Net.Sockets.TcpClient
 
 try {
-    $DbCheck.Connect($env:DS_DB_HOST, [int]$env:DS_DB_PORT)
+    # 접속 대기가 길어지지 않도록 최대 5초로 제한합니다.
+    $ConnectTask = $DbCheck.ConnectAsync($env:DS_DB_HOST, [int]$env:DS_DB_PORT)
+    if (!$ConnectTask.Wait(5000)) {
+        throw 'MySQL connection timed out (5 seconds).'
+    }
+    $ConnectTask.GetAwaiter().GetResult() | Out-Null
+}
+catch {
+    throw ("MySQL is not reachable at $($env:DS_DB_HOST):$($env:DS_DB_PORT). " +
+        'Check the MySQL service and config.ps1. Details: ' + $_.Exception.Message)
 }
 finally {
     # 접속 성공·실패에 관계없이 검사에 사용한 연결 자원을 해제합니다.
