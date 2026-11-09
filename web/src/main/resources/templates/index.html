@@ -1,2 +1,113 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DeepSight · 얼굴 모자이크 실험실</title><link rel="stylesheet" href="/app.css"><script src="/app.js" defer></script></head>
-<body><div class="shell"><aside><a class="brand" href="/"> <span>DS</span> DeepSight</a><small class="navlabel">실험실</small><nav aria-label="메뉴"><button data-page="dashboard">대시보드</button><button data-page="datasets">사진 · 정답표</button><button data-page="programs">프로그램 실행</button><button data-page="history">실험 이력</button><button data-page="compare">이미지 · 결과 비교</button><button data-page="errors">오답 분석</button><button data-page="review">수동 검수</button><button data-page="reports">보고서 · 보존 자료</button></nav><div class="sidefoot">TEAM 02 · DeepSight<br>로컬 비공개 서비스</div></aside><main><header><span>DeepSight 실험실</span><span id="crumb">대시보드</span><button id="health">환경 점검</button></header><div class="content"><div id="notice" role="status" aria-live="polite" hidden></div><div id="screen"><h1>서비스 연결 중…</h1></div><footer>DeepSight Web · 원본과 실험 결과를 별도로 보존합니다.</footer></div></main></div><dialog id="detail"><button id="close-detail">닫기</button><h2 id="detail-title">상세</h2><div id="detail-body"></div></dialog></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta
+            name="viewport"
+            content="width=device-width,initial-scale=1"
+    >
+
+    <title>DeepSight · 얼굴 모자이크 실험실</title>
+
+    <link rel="stylesheet" href="/app.css">
+    <script src="/app.js" defer></script>
+</head>
+
+<body>
+<div class="shell">
+
+    <!-- 사이드바 -->
+    <aside>
+        <a class="brand" href="/">
+            <span>DS</span> DeepSight
+        </a>
+
+        <small class="navlabel">실험실</small>
+
+        <nav aria-label="메뉴">
+            <button data-page="dashboard">
+                대시보드
+            </button>
+
+            <button data-page="datasets">
+                사진 · 정답표
+            </button>
+
+            <button data-page="programs">
+                프로그램 실행
+            </button>
+
+            <button data-page="history">
+                실험 이력
+            </button>
+
+            <button data-page="compare">
+                이미지 · 결과 비교
+            </button>
+
+            <button data-page="errors">
+                오답 분석
+            </button>
+
+            <button data-page="review">
+                수동 검수
+            </button>
+
+            <button data-page="reports">
+                보고서 · 보존 자료
+            </button>
+        </nav>
+
+        <div class="sidefoot">
+            TEAM 02 · DeepSight<br>
+            로컬 비공개 서비스
+        </div>
+    </aside>
+
+    <!-- 메인 화면 -->
+    <main>
+
+        <!-- 상단 표시 및 환경 점검 -->
+        <header>
+            <span>DeepSight 실험실</span>
+            <span id="crumb">대시보드</span>
+
+            <button id="health">
+                환경 점검
+            </button>
+        </header>
+
+        <div class="content">
+
+            <!-- 알림 메시지 -->
+            <div
+                    id="notice"
+                    role="status"
+                    aria-live="polite"
+                    hidden
+            ></div>
+
+            <!-- app.js에서 선택한 화면을 표시하는 영역 -->
+            <div id="screen">
+                <h1>서비스 연결 중…</h1>
+            </div>
+
+            <footer>
+                DeepSight Web · 원본과 실험 결과를 별도로 보존합니다.
+            </footer>
+        </div>
+    </main>
+</div>
+
+<!-- 상세 정보 대화상자 -->
+<dialog id="detail">
+    <button id="close-detail">
+        닫기
+    </button>
+
+    <h2 id="detail-title">상세</h2>
+
+    <div id="detail-body"></div>
+</dialog>
+</body>
+</html>

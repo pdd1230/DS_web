@@ -1,51 +1,1362 @@
 'use strict';
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const names={dashboard:'대시보드',datasets:'사진 · 정답표',programs:'프로그램 실행',history:'실험 이력',compare:'이미지 · 결과 비교',errors:'오답 분석',review:'수동 검수',reports:'보고서 · 보존 자료',run:'실험 상세'};
-const kindNames={initial:'초기 Haar · main.py',baseline:'YOLO+Haar 기준 · main_1_baseline.py',compare:'4정책 비교 · run_experiment.py',import_initial:'첨부 과거 초기 결과 가져오기',import_compare:'첨부 과거 4정책 결과 가져오기',import_baseline:'첨부 과거 기준 결과 가져오기'};
-const st={page:'dashboard',datasets:[],runs:[],run:null,detail:null,dataset:null,file:null,policy:'yolo_only',filter:'전체',query:'',pageNo:0,requestId:crypto.randomUUID(),report:null};
-let polling=false;
-async function api(path,method='GET',body){const options={method};if(body instanceof FormData)options.body=body;else if(body!==undefined){options.headers={'Content-Type':'application/json'};options.body=JSON.stringify(body)}const response=await fetch('/api'+path,options);const data=await response.json();if(!response.ok)throw Error(data.error||data.detail||'요청 실패');return data}
-function notice(t,error=false){const el=$('#notice');el.hidden=false;el.textContent=t;el.className=error?'error':'';if(!error)setTimeout(()=>el.hidden=true,6000)}
-const badge=(t,w=false)=>`<span class="badge ${w?'warn':''}">${esc(t)}</span>`;
-const btn=(label,action,primary=false)=>`<button type="button" ${action} class="${primary?'primary':''}">${label}</button>`;
-const heading=(e,t,s,a='')=>`<div class="heading"><div><div class="eyebrow">${e}</div><h1>${t}</h1><p>${s}</p></div><div class="actions">${a}</div></div>`;
-const empty=t=>`<div class="panel empty">${t}</div>`;
-const activeJobs=()=>st.detail?.jobs?.filter(j=>['QUEUED','RUNNING'].includes(j.status))||[];
-async function refresh(){[st.datasets,st.runs]=await Promise.all([api('/datasets'),api('/runs')]);if(!st.run&&st.runs.length)st.run=st.runs[0].id}
-async function loadRun(){if(!st.run)return false;st.detail=await api('/runs/'+st.run);st.dataset=await api('/datasets/'+st.detail.run.datasetId);if(!st.file||!st.dataset.images.some(i=>i.filename===st.file))st.file=st.dataset.images[0]?.filename;const policies=[...new Set(st.detail.results.map(r=>r.policy))];if(policies.length&&!policies.includes(st.policy))st.policy=policies[0];return true}
-async function navigate(page){st.page=page;st.filter='전체';st.pageNo=0;st.query='';await render()}
-function runPicker(){return `<div class="toolbar"><label for="run-select">실험 선택</label><select id="run-select">${st.runs.map(r=>`<option value="${r.id}" ${r.id===st.run?'selected':''}>${esc(r.title)} · ${r.id.slice(0,8)}${r.origin==='IMPORTED'?' · 과거 자료':''}</option>`).join('')}</select>${st.detail?.run.origin==='IMPORTED'?badge('과거 자료 · 설정 미확인',true):''}</div>`}
-function summaries(){return st.detail?.reports?.[0]?JSON.parse(st.detail.reports[0].summaryJson):[]}
-function runRows(runs){return `<div class="tablewrap"><table><thead><tr><th>실험 / 목적</th><th>프로그램</th><th>상태</th><th>생성 시각</th><th>작업</th></tr></thead><tbody>${runs.map(r=>`<tr><td><button class="link" data-run="${r.id}">${esc(r.title)}</button><br><small>${esc(r.note)} · ${r.id.slice(0,8)}</small>${r.origin==='IMPORTED'?'<br>'+badge('과거 자료',true):''}</td><td>${esc(kindNames[r.kind]||r.kind)}</td><td>${badge(r.status,['FAILED','IMPORT_FAILED'].includes(r.status))}</td><td>${esc(r.createdAt?.slice(0,16).replace('T',' '))}</td><td>${btn('열기',`data-run="${r.id}"`)}</td></tr>`).join('')}</tbody></table></div>`}
-async function dashboard(){await refresh();const recent=st.runs[0];if(recent){st.run=recent.id;await loadRun()}const sum=summaries();return heading('OVERVIEW','실험을 이어가 볼까요?','사진과 정답을 등록하고, 프로그램을 실행해 결과를 비교하세요.',btn('새 실험','data-page="programs"',true))+`<div class="stats">${[['데이터셋 버전',st.datasets.length],['전체 실험',st.runs.length],['완료 실험',st.runs.filter(r=>r.status==='COMPLETED').length],['실행 중',st.runs.filter(r=>['RUNNING','QUEUED','IMPORTING'].includes(r.status)).length]].map(([k,v])=>`<div class="stat"><span>${k}</span><strong>${v}</strong></div>`).join('')}</div><div class="grid2"><section class="panel"><div class="panelhead"><h2>최근 실험 정책별 개수 일치율</h2></div><div class="pad">${sum.length?sum.map(p=>`<div class="barrow"><span>${esc(p.policy)}</span><div class="track"><div class="fill" style="width:${Number(p.exact_match_pct)||0}%"></div></div><span>${esc(p.exact_match_pct)}%</span></div>`).join(''):'실험 완료 후 표시됩니다.'}<p class="hint">개수 일치율은 모자이크 품질이나 얼굴 위치 정확도가 아닙니다.</p></div></section><section class="panel"><div class="panelhead"><h2>작업 순서</h2></div><div class="pad"><p>1. 사진과 정답표 등록</p><p>2. 프로그램 선택 · 이전 결과 보존 확인</p><p>3. 실행 상태 · 로그 확인</p><p>4. 이미지 비교 · 수동 검수 · 보고서 갱신</p></div></section></div><section class="panel"><div class="panelhead"><h2>최근 실험</h2>${btn('전체 보기','data-page="history"')}</div>${st.runs.length?runRows(st.runs.slice(0,5)):empty('아직 실행한 실험이 없습니다.')}</section>`}
-async function datasets(){await refresh();let html=heading('DATASETS','사진과 정답을 함께 관리하세요.','정답을 수정하면 새 버전을 만듭니다. 기존 실험의 정답은 바뀌지 않습니다.',btn('첨부 기준 사진 20장 등록','data-action="sample"',true));html+=`<section class="panel"><div class="panelhead"><h2>새 데이터셋 등록</h2></div><form class="pad" id="dataset-form"><div class="formgrid"><label class="field">이름<input name="name" required maxlength="200" placeholder="예: 얼굴 기준 사진 v1"></label><label class="field">사진 여러 장<input type="file" name="photos" accept="image/jpeg,image/png,image/bmp,image/webp" multiple required></label><label class="field full">정답표 CSV<input type="file" name="gtFile" accept=".csv" required></label></div><p class="hint">UTF-8 CSV: 파일명,실제 얼굴 수,scene,note · 사진 1~200장 · 장당 25MB 이하</p><button class="primary" type="submit">검증 후 등록</button></form></section><section class="panel"><div class="panelhead"><h2>등록한 데이터셋</h2></div><div class="pad actions">${st.datasets.map(d=>btn(esc(d.name),`data-dataset="${d.id}"`)).join('')||'등록된 데이터셋이 없습니다.'}</div></section><div id="dataset-detail"></div>`;return html}
-async function showDataset(id){const d=await api('/datasets/'+id);st.dataset=d;$('#dataset-detail').innerHTML=`<section class="panel"><div class="panelhead"><h2>${esc(d.dataset.name)}</h2><a class="button" href="data:text/csv;charset=utf-8,${encodeURIComponent(d.dataset.groundTruth)}" download="ground_truth.csv">정답표 CSV 받기</a></div><div class="pad"><div class="gallery">${d.images.map(im=>`<button class="photo" data-zoom="/api/images/original/${im.id}" data-name="${esc(im.filename)}"><img src="/api/images/original/${im.id}" alt="${esc(im.filename)}" loading="lazy"><div>${esc(im.filename)}<small>정답 ${im.groundTruth}개 · ${im.width}×${im.height}</small></div></button>`).join('')}</div><form id="version-form" class="formgrid" style="margin-top:20px"><input type="hidden" name="parentId" value="${d.dataset.id}"><label class="field full">새 버전 이름<input name="name" value="${esc(d.dataset.name)} 수정본" required></label><label class="field full">정답표 편집<textarea name="groundTruth" required style="min-height:220px">${esc(d.dataset.groundTruth)}</textarea></label><div><button class="primary" type="submit">정답 검증 후 새 버전 저장</button></div></form></div></section>`}
-async function programs(clone){await refresh();const c=clone||null;const settings=c?JSON.parse(c.settingsJson):{};return heading('PROGRAM RUNNER','프로그램을 선택하고 실행하세요.','추론과 분석은 Python이 수행하고 진행 상태와 결과는 이 웹에서 확인합니다.')+(st.datasets.length?'':`<div class="panel pad">먼저 사진·정답표를 등록하세요. ${btn('등록 화면','data-page="datasets"')}</div>`)+`<section class="panel"><div class="panelhead"><h2>${c?'이전 실험 복제 · 새 ID로 실행':'새 실험 준비'}</h2>${badge('이전 결과 보존')}</div><form id="run-form" class="pad"><div class="formgrid"><label class="field full">실행할 프로그램<select name="kind" id="kind-select">${Object.entries(kindNames).map(([k,v])=>`<option value="${k}" ${c?.kind===k?'selected':''}>${v}</option>`).join('')}</select></label><label class="field">데이터셋<select name="datasetId" required>${st.datasets.map(d=>`<option value="${d.id}" ${c?.datasetId===d.id?'selected':''}>${esc(d.name)} · ${d.id.slice(0,8)}</option>`).join('')}</select></label><label class="field">실험 이름<input name="title" maxlength="200" required value="${c?esc(c.title)+' 재실행':''}" placeholder="예: 기본 조건 4정책 비교"></label><label class="field full">목적 · 변경사항<textarea name="note" required maxlength="4000">${c?esc(c.note):''}</textarea></label><label class="field full">이전 실험 보존 설명<input name="previousNote" required maxlength="4000" value="이전 결과 보존 후 새 조건 비교"></label><div class="full" id="settings-block"><h3>4정책 실험 설정</h3><p class="hint">초기·기준 프로그램과 과거 자료 가져오기에는 적용되지 않습니다.</p><div class="formgrid">${[['YOLO_CONFIDENCE','YOLO confidence',.2,.01,1,.01],['YOLO_IMAGE_SIZE','추론 이미지 크기',1280,320,1920,32],['MIN_FACE_SIZE','최소 얼굴 크기',30,1,500,1],['MOSAIC_SIZE','모자이크 축소 크기',6,2,100,1],['FACE_PADDING_RATIO','얼굴 여백 비율',0,0,.5,.01]].map(([k,l,v,min,max,step])=>`<label class="field">${l}<input name="${k}" type="number" value="${settings[k]??v}" min="${min}" max="${max}" step="${step}" required></label>`).join('')}</div></div></div><label class="check"><input type="checkbox" name="preserve" required>이전 결과와 설명을 보존하고 새 실험을 시작합니다.</label><p class="hint">기존 결과 가져오기는 ‘첨부 기준 사진 20장’ 데이터셋에서 사용하세요. 과거 실행 설정은 미확인으로 표시합니다.</p><button class="primary" type="submit" ${st.datasets.length?'':'disabled'}>실제 프로그램 실행</button></form></section><section class="panel"><div class="panelhead"><h2>분석만 재실행 · build_deepsight_reports.py</h2></div><form class="pad" id="analysis-form"><label class="field">완료한 4정책 실험<select name="runId" required>${st.runs.filter(r=>r.kind==='compare'&&r.currentRevision>0).map(r=>`<option value="${r.id}">${esc(r.title)} · r${r.currentRevision}</option>`).join('')}</select></label><p class="hint">추론과 원본은 유지하며 저장된 검수를 반영해 새 보고서 개정을 생성합니다.</p><button type="submit" class="primary">분석 프로그램 실행</button></form></section>`}
-async function history(){await refresh();const matching=st.runs.filter(r=>(r.title+' '+r.note+' '+r.id).toLowerCase().includes(st.query.toLowerCase()));const page=matching.slice(st.pageNo*10,st.pageNo*10+10);return heading('EXPERIMENTS','실험 과정이 기록으로 남습니다.','초기·기준 프로그램과 4정책 결과를 구분해 보관합니다.',btn('새 실행','data-page="programs"',true))+`<div class="toolbar"><input id="history-query" aria-label="실험 이름·목적·ID 검색" placeholder="실험 이름 · 목적 · ID 검색" value="${esc(st.query)}">${btn('검색','data-action="search"')}<small>전체 ${matching.length}건</small></div><section class="panel">${runRows(page)}</section><div class="actions">${btn('이전','data-action="prev"')}<span>${st.pageNo+1} / ${Math.max(1,Math.ceil(matching.length/10))}</span>${btn('다음','data-action="next"')}</div>`}
-async function runView(){if(!await loadRun())return empty('실험을 먼저 실행하세요.');const r=st.detail.run,j=st.detail.jobs[0];return heading('RUN / '+esc(r.id.slice(0,8)),esc(r.title),esc(r.note),btn('설정 복제 · 새 실행','data-action="clone"'))+runPicker()+`<section class="panel"><div class="panelhead"><h2>${esc(kindNames[r.kind])}</h2>${badge(r.status,['FAILED','IMPORT_FAILED'].includes(r.status))}</div><div class="pad"><div class="progress"><span style="width:${j?.progress||0}%"></span></div><p>진행 ${j?.progress||0}% · 작업 ${esc(j?.kind||'')}</p>${r.error?`<div class="error">${esc(r.error)}</div>`:''}${j?.error?`<p class="hint">최근 작업 메시지: ${esc(j.error)}</p>`:''}<div class="actions">${btn('이미지 비교','data-page="compare"',true)}${btn('오답 분석','data-page="errors"')}${btn('보고서','data-page="reports"')}${r.currentRevision>0&&r.kind==='compare'?btn('분석만 재실행','data-action="analyze"'):''}${j?.status==='IMPORT_FAILED'?btn('DB 수집 복구',`data-reimport="${j.id}"`):''}</div></div></section><section class="panel"><div class="panelhead"><h2>실행 로그</h2>${btn('새로고침','data-action="log"')}</div><div class="pad"><pre class="log" id="run-log">로그를 불러오는 중…</pre></div></section>`}
-function controls(){return runPicker()+`<div class="toolbar"><label for="file-select">사진</label><select id="file-select">${st.dataset.images.map(i=>`<option ${st.file===i.filename?'selected':''}>${esc(i.filename)}</option>`).join('')}</select><label for="policy-select">정책</label><select id="policy-select">${[...new Set(st.detail.results.map(r=>r.policy))].map(p=>`<option ${st.policy===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>`}
-const result=()=>st.detail?.results.find(r=>r.filename===st.file&&r.policy===st.policy);
-const original=()=>st.dataset?.images.find(i=>i.filename===st.file);
-function photoPair(){const r=result(),i=original();return `<section class="panel"><div class="panelhead"><h2>${esc(st.file)}</h2>${r?badge(r.evaluation,r.evaluation!=='Exact Match'):''}</div><div class="compare"><div class="imagepane"><div class="imagehead"><span>원본 이미지</span><span>정답 ${i?.groundTruth??'—'}개</span></div><div class="picture">${i?`<img src="/api/images/original/${i.id}" alt="원본 ${esc(st.file)}" data-zoom="/api/images/original/${i.id}">`:''}</div></div><div class="imagepane"><div class="imagehead"><span>${esc(st.policy)} 결과</span><span>예측 ${r?.detected??'평가 불가'}</span></div><div class="picture ${r?.imagePath?'':'empty'}">${r?.imagePath?`<img src="/api/images/result/${r.id}" alt="모자이크 결과" data-zoom="/api/images/result/${r.id}">`:'처리되지 않았거나 결과 이미지가 없습니다.'}</div></div></div><div class="pad"><span class="badge grey">${esc(r?.processingStatus||'결과 대기')}</span> <small>${esc(i?.scene)} · ${esc(i?.note)}</small></div></section>`}
-async function compare(){if(!await loadRun())return empty('실험을 먼저 실행하세요.');if(!st.detail.results.length)return empty(`결과를 생성 중이거나 실패했습니다. ${btn('실행 상태 보기','data-page="run"')}`);return heading('COMPARE','사진 한 장, 정책별 결과 비교.','이미지를 클릭하면 확대해서 확인할 수 있습니다.',btn('검수하기','data-page="review"',true))+`<div class="policies">${summaries().map(p=>`<button class="policy ${p.policy===st.policy?'active':''}" data-policy="${p.policy}">${esc(p.policy)}<b>${esc(p.exact_match_pct)}%</b><small>일치 ${p.exact} / 평가 ${p.evaluated} · 실패 ${p.failed}</small></button>`).join('')}</div>`+controls()+photoPair()+`<div class="actions">${btn('이전 사진','data-action="photo-prev"')}${btn('다음 사진','data-action="photo-next"')}${result()?btn('후보 · 좌표 상세',`data-result-detail="${result().id}"`):''}</div><p class="hint">얼굴 개수 일치와 비식별화 품질은 별도입니다. 실제 얼굴의 누락·오탐을 검수하세요.</p>`}
-async function errorView(){if(!await loadRun())return empty('실험을 먼저 실행하세요.');let rows=st.detail.results;const reviews=new Map(st.detail.reviews.map(r=>[r.resultId,r]));rows=rows.filter(r=>st.filter==='전체'?r.evaluation!=='Exact Match'||r.reviewRequired:st.filter==='과다'?r.evaluation==='Over-detection':st.filter==='과소'?r.evaluation==='Under-detection':st.filter==='실패'?r.detected===null:!reviews.get(r.id)?.done);return heading('ANALYSIS','차이가 난 사진을 확인하세요.','정답과 예측, 처리 실패, 아직 검수하지 않은 결과를 구분합니다.')+runPicker()+`<div class="toolbar"><select id="error-filter">${['전체','과다','과소','실패','미검수'].map(t=>`<option ${t===st.filter?'selected':''}>${t}</option>`).join('')}</select><small>${rows.length}건</small></div><section class="panel"><div class="tablewrap"><table><thead><tr><th>사진</th><th>정책</th><th>정답</th><th>예측</th><th>평가 · 상태</th><th>작업</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.filename)}<br><small>${esc(r.scene)}</small></td><td>${esc(r.policy)}</td><td>${r.groundTruth}</td><td>${r.detected??'—'}</td><td>${badge(r.evaluation,r.evaluation!=='Exact Match')}<br><small>${esc(r.processingStatus)}</small></td><td>${btn('검수',`data-review-result="${r.id}"`)}</td></tr>`).join('')}</tbody></table></div></section>`}
-async function review(){if(!await loadRun())return empty('실험을 먼저 실행하세요.');const r=result();if(!r)return empty('완료한 실험 결과가 없습니다.');const v=st.detail.reviews.find(v=>v.resultId===r.id)||{};return heading('MANUAL REVIEW','마지막 판단은 사람이 확인합니다.','검수는 현재 실험 · 정책 · 사진에만 저장됩니다.',badge(v.done?'검수 완료':'검수 대기',!v.done))+controls()+`<div class="grid2"><div>${photoPair()}</div><section class="panel"><div class="panelhead"><h2>검수 기록</h2><small>${esc(st.policy)}</small></div><form class="pad" id="review-form"><input type="hidden" name="resultId" value="${r.id}"><div class="formgrid"><label class="field">누락 얼굴 수<input name="missingFaces" type="number" value="${v.missingFaces||0}" min="0" max="10000" required></label><label class="field">오탐 얼굴 수<input name="falseFaces" type="number" value="${v.falseFaces||0}" min="0" max="10000" required></label><label class="field full">모자이크 품질<select name="quality">${['적절함','범위 부족','추가 확인'].map(t=>`<option ${v.quality===t?'selected':''}>${t}</option>`).join('')}</select></label><label class="field full">검수 의견<textarea name="note" maxlength="4000">${esc(v.note||'')}</textarea></label></div><label class="check"><input type="checkbox" name="done" ${v.done?'checked':''}>원본과 결과를 비교해 검수를 완료했습니다.</label><button class="primary" type="submit">검수 저장</button><p class="hint">최종 저장: ${esc(v.updatedAt||'아직 저장하지 않음')}</p>${st.detail.run.kind==='compare'?btn('검수 반영 · 분석만 재실행','data-action="analyze"'):''}<p class="hint">보고서 갱신은 추론을 다시 하지 않습니다. 저장한 검수와 보고서 반영 시점이 다를 수 있습니다.</p></form></section></div>`}
-async function reportsView(){if(!await loadRun())return empty('실험을 먼저 실행하세요.');const reports=st.detail.reports;if(!reports.length)return empty(`생성된 보고서가 없습니다. ${btn('실행 상태','data-page="run"')}`);if(!st.report||!reports.some(r=>r.id===st.report))st.report=reports[0].id;const report=reports.find(r=>r.id===st.report),files=await api('/reports/'+report.id+'/files');return heading('REPORTS & ARCHIVE','결과와 과정을 함께 보관합니다.','이전 보고서 개정과 검수 반영 시점을 확인하세요.',btn('기존 CLI 백업','data-action="archives"'))+runPicker()+`<div class="toolbar"><label for="report-select">보고서 개정</label><select id="report-select">${reports.map(r=>`<option value="${r.id}" ${r.id===st.report?'selected':''}>r${r.revision} · ${r.createdAt.slice(0,16)}</option>`).join('')}</select><a class="button" href="/api/reports/${report.id}/zip">실험 결과 ZIP 받기</a></div><section class="panel"><div class="panelhead"><h2>산출물 · r${report.revision}</h2>${badge(files.length+'개 파일')}</div><div class="tablewrap"><table><thead><tr><th>파일</th><th>크기</th><th>SHA-256</th><th></th></tr></thead><tbody>${files.map(a=>`<tr><td>${esc(a.path)}</td><td>${(a.size/1024).toFixed(1)} KB</td><td><small>${a.sha256.slice(0,12)}…</small></td><td><a href="/api/artifacts/${a.id}">다운로드</a></td></tr>`).join('')}</tbody></table></div></section><section class="panel"><div class="panelhead"><h2>보존 · 검수 스냅샷</h2></div><div class="pad"><p>자료 출처: ${esc(st.detail.run.origin)}</p><p>이전 실험: ${esc(st.detail.run.previousRunId||'없음')}</p><p>보존 설명: ${esc(st.detail.run.previousNote)}</p><p>반영된 검수 기록: ${JSON.parse(report.reviewSnapshot||'[]').length}건</p><small>이전 보고서와 원본은 자동 삭제하지 않습니다. 장비 장애 대비 백업은 별도의 백업 안내를 참고하세요.</small></div></section>`}
-async function render(){const fn={dashboard,datasets,programs,history,run:runView,compare,errors:errorView,review,reports:reportsView}[st.page];document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===st.page));$('#crumb').textContent=names[st.page];try{$('#screen').innerHTML=await fn();if(st.page==='run')await showLog()}catch(e){$('#screen').innerHTML=`<div class="error">${esc(e.message)}</div>`}}
-async function showLog(){const j=st.detail?.jobs[0];if(j&&$('#run-log'))$('#run-log').textContent=(await api('/jobs/'+j.id+'/log')).log}
-function dialog(title,html){$('#detail-title').textContent=title;$('#detail-body').innerHTML=html;$('#detail').showModal()}
-$('#close-detail').onclick=()=>$('#detail').close();
-document.addEventListener('click',async e=>{const t=e.target.closest('[data-page],[data-run],[data-dataset],[data-action],[data-zoom],[data-policy],[data-result-detail],[data-review-result],[data-reimport]');if(!t)return;try{
- if(t.dataset.zoom){dialog(t.dataset.name||'이미지 확대',`<img src="${esc(t.dataset.zoom)}" alt="확대 이미지">`);return}
- if(t.dataset.page){await navigate(t.dataset.page);return}if(t.dataset.run){st.run=t.dataset.run;st.file=null;await navigate('run');return}if(t.dataset.dataset){await showDataset(t.dataset.dataset);return}if(t.dataset.policy){st.policy=t.dataset.policy;await render();return}
- if(t.dataset.resultDetail){const d=await api('/results/'+t.dataset.resultDetail+'/details');dialog('후보 · 최종 얼굴 좌표',`<pre>${esc(JSON.stringify(d,null,2))}</pre>`);return}
- if(t.dataset.reviewResult){const r=st.detail.results.find(r=>r.id===t.dataset.reviewResult);st.file=r.filename;st.policy=r.policy;await navigate('review');return}
- if(t.dataset.reimport){await api('/jobs/'+t.dataset.reimport+'/reimport','POST');await render();return}
- switch(t.dataset.action){case 'archives':{const archives=await api('/legacy/backups');dialog('기존 CLI 백업',archives.length?archives.map(a=>`<section class="panel pad"><h3>${esc(a.id)}</h3><p>${esc(a.note)}</p><small>${esc(a.origin)}</small><p><a href="/api/legacy/backups/${a.id}/zip">무결성 검증 후 ZIP 받기</a></p></section>`).join(''):'첨부 프로젝트의 csv_backup 폴더에 보관된 스냅샷이 없습니다.');break}case 'sample':t.disabled=true;await api('/datasets/sample','POST');await render();notice('첨부 기준 사진과 정답표를 등록했습니다.');break;case 'analyze':t.disabled=true;await api('/runs/'+st.run+'/analyze','POST');await navigate('run');notice('분석 작업을 등록했습니다.');break;case 'log':await showLog();break;case 'clone':st.requestId=crypto.randomUUID();st.page='programs';$('#screen').innerHTML=await programs(st.detail.run);break;case 'search':st.query=$('#history-query').value;st.pageNo=0;await render();break;case 'prev':st.pageNo=Math.max(0,st.pageNo-1);await render();break;case 'next':if((st.pageNo+1)*10<st.runs.filter(r=>(r.title+' '+r.note+' '+r.id).toLowerCase().includes(st.query.toLowerCase())).length)st.pageNo++;await render();break;case 'photo-prev':case 'photo-next':{const list=st.dataset.images,index=list.findIndex(i=>i.filename===st.file),step=t.dataset.action==='photo-next'?1:-1;st.file=list[(index+step+list.length)%list.length].filename;await render();break}}
- }catch(e){notice(e.message,true);t.disabled=false}});
-document.addEventListener('change',async e=>{try{if(e.target.id==='run-select'){st.run=e.target.value;st.file=null;st.report=null;await render()}if(e.target.id==='file-select'){st.file=e.target.value;await render()}if(e.target.id==='policy-select'){st.policy=e.target.value;await render()}if(e.target.id==='error-filter'){st.filter=e.target.value;await render()}if(e.target.id==='report-select'){st.report=e.target.value;await render()}}catch(e){notice(e.message,true)}});
-document.addEventListener('submit',async e=>{if(!['run-form','dataset-form','version-form','review-form','analysis-form'].includes(e.target.id))return;e.preventDefault();const form=e.target,button=form.querySelector('button[type=submit]');button.disabled=true;try{const data=new FormData(form);if(form.id==='analysis-form'){st.run=data.get('runId');if(!st.run)throw Error('완료한 4정책 실험을 선택하세요.');await api('/runs/'+st.run+'/analyze','POST');await navigate('run')}else if(form.id==='run-form'){const body=Object.fromEntries(data);body.requestId=st.requestId;body.preserve=data.has('preserve');body.settings={};if(body.kind==='compare')for(const key of ['YOLO_CONFIDENCE','YOLO_IMAGE_SIZE','MIN_FACE_SIZE','MOSAIC_SIZE','FACE_PADDING_RATIO'])body.settings[key]=Number(data.get(key));const r=await api('/runs','POST',body);st.run=r.id;st.requestId=crypto.randomUUID();await refresh();await navigate('run')}else if(form.id==='review-form'){const body=Object.fromEntries(data);body.done=data.has('done');body.missingFaces=Number(body.missingFaces);body.falseFaces=Number(body.falseFaces);await api('/results/'+body.resultId+'/review','PUT',body);await render();notice('검수 내용을 DB에 저장했습니다.')}else{const d=await api('/datasets','POST',data);await render();await showDataset(d.id);notice('검증과 DB 저장을 완료했습니다.')}}catch(e){notice(e.message,true);button.disabled=false}});
-$('#health').onclick=async()=>{try{dialog('환경 점검',`<pre>${esc(JSON.stringify(await api('/health'),null,2))}</pre>`)}catch(e){notice(e.message,true)}};
-setInterval(async()=>{if(polling||!['run','dashboard','history'].includes(st.page))return;polling=true;try{if(st.page==='run'&&st.detail&&activeJobs().length){await render()}else if(st.page==='dashboard'&&st.runs.some(r=>['QUEUED','RUNNING','IMPORTING'].includes(r.status))){await render()}}catch(e){notice(e.message,true)}finally{polling=false}},2500);
+const $ = (s) => document.querySelector(s);
+const esc = (s) =>
+    String(s ?? '').replace(
+        /[&<>"']/g,
+        (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+    );
+const names = {
+    dashboard: '대시보드',
+    datasets: '사진 · 정답표',
+    programs: '프로그램 실행',
+    history: '실험 이력',
+    compare: '이미지 · 결과 비교',
+    errors: '오답 분석',
+    review: '수동 검수',
+    reports: '보고서 · 보존 자료',
+    run: '실험 상세'
+};
+const kindNames = {
+    initial: '초기 Haar · main.py',
+    baseline: 'YOLO+Haar 기준 · main_1_baseline.py',
+    compare: '4정책 비교 · run_experiment.py',
+    import_initial: '첨부 과거 초기 결과 가져오기',
+    import_compare: '첨부 과거 4정책 결과 가져오기',
+    import_baseline: '첨부 과거 기준 결과 가져오기'
+};
+const st = {
+    page: 'dashboard',
+    datasets: [],
+    runs: [],
+    run: null,
+    detail: null,
+    dataset: null,
+    file: null,
+    policy: 'yolo_only',
+    filter: '전체',
+    query: '',
+    pageNo: 0,
+    requestId: crypto.randomUUID(),
+    report: null
+};
+let polling = false;
+// ============================================================
+// API 요청 전송 및 응답 검사
+// ============================================================
+
+async function api(path, method = 'GET', body) {
+    const options = { method };
+    if (body instanceof FormData) options.body = body;
+    else if (body !== undefined) {
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify(body);
+    }
+    const response = await fetch('/api' + path, options);
+    const data = await response.json();
+    if (!response.ok) throw Error(data.error || data.detail || '요청 실패');
+    return data;
+}
+// ============================================================
+// 알림 메시지 표시
+// ============================================================
+
+function notice(t, error = false) {
+    const el = $('#notice');
+    el.hidden = false;
+    el.textContent = t;
+    el.className = error ? 'error' : '';
+    if (!error) setTimeout(() => (el.hidden = true), 6000);
+}
+const badge = (t, w = false) => /* HTML */ `
+    <span class="badge ${w ? 'warn' : ''}">${esc(t)}</span>
+`;
+const btn = (label, action, primary = false) => /* HTML */ `
+    <button type="button" ${action} class="${primary ? 'primary' : ''}">${label}</button>
+`;
+const heading = (e, t, s, a = '') => /* HTML */ `
+    <div class="heading">
+        <div>
+            <div class="eyebrow">${e}</div>
+            <h1>${t}</h1>
+            <p>${s}</p>
+        </div>
+        <div class="actions">${a}</div>
+    </div>
+`;
+const empty = (t) => /* HTML */ `
+    <div class="panel empty">${t}</div>
+`;
+const activeJobs = () =>
+    st.detail?.jobs?.filter((j) => ['QUEUED', 'RUNNING'].includes(j.status)) || [];
+// ============================================================
+// 데이터셋과 실험 목록 갱신
+// ============================================================
+
+async function refresh() {
+    [st.datasets, st.runs] = await Promise.all([api('/datasets'), api('/runs')]);
+    if (!st.run && st.runs.length) st.run = st.runs[0].id;
+}
+// ============================================================
+// 선택한 실험과 입력 사진 조회
+// ============================================================
+
+async function loadRun() {
+    if (!st.run) return false;
+    st.detail = await api('/runs/' + st.run);
+    st.dataset = await api('/datasets/' + st.detail.run.datasetId);
+    if (!st.file || !st.dataset.images.some((i) => i.filename === st.file))
+        st.file = st.dataset.images[0]?.filename;
+    const policies = [...new Set(st.detail.results.map((r) => r.policy))];
+    if (policies.length && !policies.includes(st.policy)) st.policy = policies[0];
+    return true;
+}
+// ============================================================
+// 화면 이동 및 검색 조건 초기화
+// ============================================================
+
+async function navigate(page) {
+    st.page = page;
+    st.filter = '전체';
+    st.pageNo = 0;
+    st.query = '';
+    await render();
+}
+// ============================================================
+// 실험 선택 목록
+// ============================================================
+
+function runPicker() {
+    return /* HTML */ `
+        <div class="toolbar">
+            <label for="run-select">실험 선택</label>
+            <select id="run-select">
+                ${st.runs
+        .map(
+            (r) => /* HTML */ `
+                            <option value="${r.id}" ${r.id === st.run ? 'selected' : ''}>
+                                ${esc(r.title)} ·
+                                ${r.id.slice(0, 8)}${r.origin === 'IMPORTED' ? ' · 과거 자료' : ''}
+                            </option>
+                        `
+        )
+        .join('')}
+            </select>
+            ${st.detail?.run.origin === 'IMPORTED' ? badge('과거 자료 · 설정 미확인', true) : ''}
+        </div>
+    `;
+}
+// ============================================================
+// 최신 보고서 요약 조회
+// ============================================================
+
+function summaries() {
+    return st.detail?.reports?.[0] ? JSON.parse(st.detail.reports[0].summaryJson) : [];
+}
+// ============================================================
+// 실험 목록 표 생성
+// ============================================================
+
+function runRows(runs) {
+    return /* HTML */ `
+        <div class="tablewrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>실험 / 목적</th>
+                        <th>프로그램</th>
+                        <th>상태</th>
+                        <th>생성 시각</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${runs
+        .map(
+            (r) => /* HTML */ `
+                                <tr>
+                                    <td>
+                                        <button class="link" data-run="${r.id}">
+                                            ${esc(r.title)}
+                                        </button>
+                                        <br />
+                                        <small>${esc(r.note)} · ${r.id.slice(0, 8)}</small>
+                                        ${r.origin === 'IMPORTED' ? '<br>' + badge('과거 자료', true) : ''}
+                                    </td>
+                                    <td>${esc(kindNames[r.kind] || r.kind)}</td>
+                                    <td>
+                                        ${badge(r.status, ['FAILED', 'IMPORT_FAILED'].includes(r.status))}
+                                    </td>
+                                    <td>${esc(r.createdAt?.slice(0, 16).replace('T', ' '))}</td>
+                                    <td>${btn('열기', `data-run="${r.id}"`)}</td>
+                                </tr>
+                            `
+        )
+        .join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+// ============================================================
+// 대시보드 화면
+// ============================================================
+
+async function dashboard() {
+    await refresh();
+    const recent = st.runs[0];
+    if (recent) {
+        st.run = recent.id;
+        await loadRun();
+    }
+    const sum = summaries();
+    return (
+        heading(
+            'OVERVIEW',
+            '실험을 이어가 볼까요?',
+            '사진과 정답을 등록하고, 프로그램을 실행해 결과를 비교하세요.',
+            btn('새 실험', 'data-page="programs"', true)
+        ) +
+        /* HTML */ `
+            <div class="stats">
+                ${[
+            ['데이터셋 버전', st.datasets.length],
+            ['전체 실험', st.runs.length],
+            ['완료 실험', st.runs.filter((r) => r.status === 'COMPLETED').length],
+            [
+                '실행 중',
+                st.runs.filter((r) => ['RUNNING', 'QUEUED', 'IMPORTING'].includes(r.status))
+                    .length
+            ]
+        ]
+            .map(
+                ([k, v]) => /* HTML */ `
+                            <div class="stat">
+                                <span>${k}</span>
+                                <strong>${v}</strong>
+                            </div>
+                        `
+            )
+            .join('')}
+            </div>
+            <div class="grid2">
+                <section class="panel">
+                    <div class="panelhead"><h2>최근 실험 정책별 개수 일치율</h2></div>
+                    <div class="pad">
+                        ${
+            sum.length
+                ? sum
+                    .map(
+                        (p) => /* HTML */ `
+                                              <div class="barrow">
+                                                  <span>${esc(p.policy)}</span>
+                                                  <div class="track">
+                                                      <div
+                                                          class="fill"
+                                                          style="width:${Number(p.exact_match_pct) || 0}%"
+                                                      ></div>
+                                                  </div>
+                                                  <span>${esc(p.exact_match_pct)}%</span>
+                                              </div>
+                                          `
+                    )
+                    .join('')
+                : '실험 완료 후 표시됩니다.'
+        }
+                        <p class="hint">
+                            개수 일치율은 모자이크 품질이나 얼굴 위치 정확도가 아닙니다.
+                        </p>
+                    </div>
+                </section>
+                <section class="panel">
+                    <div class="panelhead"><h2>작업 순서</h2></div>
+                    <div class="pad">
+                        <p>1. 사진과 정답표 등록</p>
+                        <p>2. 프로그램 선택 · 이전 결과 보존 확인</p>
+                        <p>3. 실행 상태 · 로그 확인</p>
+                        <p>4. 이미지 비교 · 수동 검수 · 보고서 갱신</p>
+                    </div>
+                </section>
+            </div>
+            <section class="panel">
+                <div class="panelhead">
+                    <h2>최근 실험</h2>
+                    ${btn('전체 보기', 'data-page="history"')}
+                </div>
+                ${st.runs.length ? runRows(st.runs.slice(0, 5)) : empty('아직 실행한 실험이 없습니다.')}
+            </section>
+        `
+    );
+}
+// ============================================================
+// 사진·정답표 등록 화면
+// ============================================================
+
+async function datasets() {
+    await refresh();
+    let html = heading(
+        'DATASETS',
+        '사진과 정답을 함께 관리하세요.',
+        '정답을 수정하면 새 버전을 만듭니다. 기존 실험의 정답은 바뀌지 않습니다.',
+        btn('첨부 기준 사진 20장 등록', 'data-action="sample"', true)
+    );
+    html += /* HTML */ `
+        <section class="panel">
+            <div class="panelhead"><h2>새 데이터셋 등록</h2></div>
+            <form class="pad" id="dataset-form">
+                <div class="formgrid">
+                    <label class="field">
+                        이름
+                        <input
+                            name="name"
+                            required
+                            maxlength="200"
+                            placeholder="예: 얼굴 기준 사진 v1"
+                        />
+                    </label>
+                    <label class="field">
+                        사진 여러 장
+                        <input
+                            type="file"
+                            name="photos"
+                            accept="image/jpeg,image/png,image/bmp,image/webp"
+                            multiple
+                            required
+                        />
+                    </label>
+                    <label class="field full">
+                        정답표 CSV
+                        <input type="file" name="gtFile" accept=".csv" required />
+                    </label>
+                </div>
+                <p class="hint">
+                    UTF-8 CSV: 파일명,실제 얼굴 수,scene,note · 사진 1~200장 · 장당 25MB 이하
+                </p>
+                <button class="primary" type="submit">검증 후 등록</button>
+            </form>
+        </section>
+        <section class="panel">
+            <div class="panelhead"><h2>등록한 데이터셋</h2></div>
+            <div class="pad actions">
+                ${st.datasets.map((d) => btn(esc(d.name), `data-dataset="${d.id}"`)).join('') || '등록된 데이터셋이 없습니다.'}
+            </div>
+        </section>
+        <div id="dataset-detail"></div>
+    `;
+    return html;
+}
+// ============================================================
+// 데이터셋 상세 정보
+// ============================================================
+
+async function showDataset(id) {
+    const d = await api('/datasets/' + id);
+    st.dataset = d;
+    $('#dataset-detail').innerHTML = /* HTML */ `
+        <section class="panel">
+            <div class="panelhead">
+                <h2>${esc(d.dataset.name)}</h2>
+                <a
+                    class="button"
+                    href="data:text/csv;charset=utf-8,${encodeURIComponent(d.dataset.groundTruth)}"
+                    download="ground_truth.csv"
+                >
+                    정답표 CSV 받기
+                </a>
+            </div>
+            <div class="pad">
+                <div class="gallery">
+                    ${d.images
+        .map(
+            (im) => /* HTML */ `
+                                <button
+                                    class="photo"
+                                    data-zoom="/api/images/original/${im.id}"
+                                    data-name="${esc(im.filename)}"
+                                >
+                                    <img
+                                        src="/api/images/original/${im.id}"
+                                        alt="${esc(im.filename)}"
+                                        loading="lazy"
+                                    />
+                                    <div>
+                                        ${esc(im.filename)}
+                                        <small>
+                                            정답 ${im.groundTruth}개 · ${im.width}×${im.height}
+                                        </small>
+                                    </div>
+                                </button>
+                            `
+        )
+        .join('')}
+                </div>
+                <form id="version-form" class="formgrid" style="margin-top:20px">
+                    <input type="hidden" name="parentId" value="${d.dataset.id}" />
+                    <label class="field full">
+                        새 버전 이름
+                        <input name="name" value="${esc(d.dataset.name)} 수정본" required />
+                    </label>
+                    <label class="field full">
+                        정답표 편집
+                        <textarea name="groundTruth" required style="min-height:220px">
+${esc(d.dataset.groundTruth)}</textarea>
+                    </label>
+                    <div>
+                        <button class="primary" type="submit">정답 검증 후 새 버전 저장</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    `;
+}
+// ============================================================
+// 프로그램 실행 화면
+// ============================================================
+
+async function programs(clone) {
+    await refresh();
+    const c = clone || null;
+    const settings = c ? JSON.parse(c.settingsJson) : {};
+    return (
+        heading(
+            'PROGRAM RUNNER',
+            '프로그램을 선택하고 실행하세요.',
+            '추론과 분석은 Python이 수행하고 진행 상태와 결과는 이 웹에서 확인합니다.'
+        ) +
+        (st.datasets.length
+            ? ''
+            : /* HTML */ `
+                  <div class="panel pad">
+                      먼저 사진·정답표를 등록하세요. ${btn('등록 화면', 'data-page="datasets"')}
+                  </div>
+              `) +
+        /* HTML */ `
+            <section class="panel">
+                <div class="panelhead">
+                    <h2>${c ? '이전 실험 복제 · 새 ID로 실행' : '새 실험 준비'}</h2>
+                    ${badge('이전 결과 보존')}
+                </div>
+                <form id="run-form" class="pad">
+                    <div class="formgrid">
+                        <label class="field full">
+                            실행할 프로그램
+                            <select name="kind" id="kind-select">
+                                ${Object.entries(kindNames)
+            .map(
+                ([k, v]) => /* HTML */ `
+                                            <option value="${k}" ${c?.kind === k ? 'selected' : ''}>
+                                                ${v}
+                                            </option>
+                                        `
+            )
+            .join('')}
+                            </select>
+                        </label>
+                        <label class="field">
+                            데이터셋
+                            <select name="datasetId" required>
+                                ${st.datasets
+            .map(
+                (d) => /* HTML */ `
+                                            <option
+                                                value="${d.id}"
+                                                ${c?.datasetId === d.id ? 'selected' : ''}
+                                            >
+                                                ${esc(d.name)} · ${d.id.slice(0, 8)}
+                                            </option>
+                                        `
+            )
+            .join('')}
+                            </select>
+                        </label>
+                        <label class="field">
+                            실험 이름
+                            <input
+                                name="title"
+                                maxlength="200"
+                                required
+                                value="${c ? esc(c.title) + ' 재실행' : ''}"
+                                placeholder="예: 기본 조건 4정책 비교"
+                            />
+                        </label>
+                        <label class="field full">
+                            목적 · 변경사항
+                            <textarea name="note" required maxlength="4000">
+${c ? esc(c.note) : ''}</textarea>
+                        </label>
+                        <label class="field full">
+                            이전 실험 보존 설명
+                            <input
+                                name="previousNote"
+                                required
+                                maxlength="4000"
+                                value="이전 결과 보존 후 새 조건 비교"
+                            />
+                        </label>
+                        <div class="full" id="settings-block">
+                            <h3>4정책 실험 설정</h3>
+                            <p class="hint">
+                                초기·기준 프로그램과 과거 자료 가져오기에는 적용되지 않습니다.
+                            </p>
+                            <div class="formgrid">
+                                ${[
+            ['YOLO_CONFIDENCE', 'YOLO confidence', 0.2, 0.01, 1, 0.01],
+            ['YOLO_IMAGE_SIZE', '추론 이미지 크기', 1280, 320, 1920, 32],
+            ['MIN_FACE_SIZE', '최소 얼굴 크기', 30, 1, 500, 1],
+            ['MOSAIC_SIZE', '모자이크 축소 크기', 6, 2, 100, 1],
+            ['FACE_PADDING_RATIO', '얼굴 여백 비율', 0, 0, 0.5, 0.01]
+        ]
+            .map(
+                ([k, l, v, min, max, step]) => /* HTML */ `
+                                            <label class="field">
+                                                ${l}
+                                                <input
+                                                    name="${k}"
+                                                    type="number"
+                                                    value="${settings[k] ?? v}"
+                                                    min="${min}"
+                                                    max="${max}"
+                                                    step="${step}"
+                                                    required
+                                                />
+                                            </label>
+                                        `
+            )
+            .join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <label class="check">
+                        <input type="checkbox" name="preserve" required />
+                        이전 결과와 설명을 보존하고 새 실험을 시작합니다.
+                    </label>
+                    <p class="hint">
+                        기존 결과 가져오기는 ‘첨부 기준 사진 20장’ 데이터셋에서 사용하세요. 과거
+                        실행 설정은 미확인으로 표시합니다.
+                    </p>
+                    <button class="primary" type="submit" ${st.datasets.length ? '' : 'disabled'}>
+                        실제 프로그램 실행
+                    </button>
+                </form>
+            </section>
+            <section class="panel">
+                <div class="panelhead"><h2>분석만 재실행 · build_deepsight_reports.py</h2></div>
+                <form class="pad" id="analysis-form">
+                    <label class="field">
+                        완료한 4정책 실험
+                        <select name="runId" required>
+                            ${st.runs
+            .filter((r) => r.kind === 'compare' && r.currentRevision > 0)
+            .map(
+                (r) => /* HTML */ `
+                                        <option value="${r.id}">
+                                            ${esc(r.title)} · r${r.currentRevision}
+                                        </option>
+                                    `
+            )
+            .join('')}
+                        </select>
+                    </label>
+                    <p class="hint">
+                        추론과 원본은 유지하며 저장된 검수를 반영해 새 보고서 개정을 생성합니다.
+                    </p>
+                    <button type="submit" class="primary">분석 프로그램 실행</button>
+                </form>
+            </section>
+        `
+    );
+}
+// ============================================================
+// 실험 이력 화면
+// ============================================================
+
+async function history() {
+    await refresh();
+    const matching = st.runs.filter((r) =>
+        (r.title + ' ' + r.note + ' ' + r.id).toLowerCase().includes(st.query.toLowerCase())
+    );
+    const page = matching.slice(st.pageNo * 10, st.pageNo * 10 + 10);
+    return (
+        heading(
+            'EXPERIMENTS',
+            '실험 과정이 기록으로 남습니다.',
+            '초기·기준 프로그램과 4정책 결과를 구분해 보관합니다.',
+            btn('새 실행', 'data-page="programs"', true)
+        ) +
+        /* HTML */ `
+            <div class="toolbar">
+                <input
+                    id="history-query"
+                    aria-label="실험 이름·목적·ID 검색"
+                    placeholder="실험 이름 · 목적 · ID 검색"
+                    value="${esc(st.query)}"
+                />
+                ${btn('검색', 'data-action="search"')}
+                <small>전체 ${matching.length}건</small>
+            </div>
+            <section class="panel">${runRows(page)}</section>
+            <div class="actions">
+                ${btn('이전', 'data-action="prev"')}
+                <span>${st.pageNo + 1} / ${Math.max(1, Math.ceil(matching.length / 10))}</span>
+                ${btn('다음', 'data-action="next"')}
+            </div>
+        `
+    );
+}
+// ============================================================
+// 실험 상세 화면
+// ============================================================
+
+async function runView() {
+    if (!(await loadRun())) return empty('실험을 먼저 실행하세요.');
+    const r = st.detail.run,
+        j = st.detail.jobs[0];
+    return (
+        heading(
+            'RUN / ' + esc(r.id.slice(0, 8)),
+            esc(r.title),
+            esc(r.note),
+            btn('설정 복제 · 새 실행', 'data-action="clone"')
+        ) +
+        runPicker() +
+        /* HTML */ `
+            <section class="panel">
+                <div class="panelhead">
+                    <h2>${esc(kindNames[r.kind])}</h2>
+                    ${badge(r.status, ['FAILED', 'IMPORT_FAILED'].includes(r.status))}
+                </div>
+                <div class="pad">
+                    <div class="progress"><span style="width:${j?.progress || 0}%"></span></div>
+                    <p>진행 ${j?.progress || 0}% · 작업 ${esc(j?.kind || '')}</p>
+                    ${
+            r.error
+                ? /* HTML */ `
+                                  <div class="error">${esc(r.error)}</div>
+                              `
+                : ''
+        }${
+            j?.error
+                ? /* HTML */ `
+                                  <p class="hint">최근 작업 메시지: ${esc(j.error)}</p>
+                              `
+                : ''
+        }
+                    <div class="actions">
+                        ${btn('이미지 비교', 'data-page="compare"', true)}${btn('오답 분석', 'data-page="errors"')}${btn('보고서', 'data-page="reports"')}${r.currentRevision > 0 && r.kind === 'compare' ? btn('분석만 재실행', 'data-action="analyze"') : ''}${j?.status === 'IMPORT_FAILED' ? btn('DB 수집 복구', `data-reimport="${j.id}"`) : ''}
+                    </div>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="panelhead">
+                    <h2>실행 로그</h2>
+                    ${btn('새로고침', 'data-action="log"')}
+                </div>
+                <div class="pad"><pre class="log" id="run-log">로그를 불러오는 중…</pre></div>
+            </section>
+        `
+    );
+}
+// ============================================================
+// 비교 화면의 선택 도구
+// ============================================================
+
+function controls() {
+    return (
+        runPicker() +
+        /* HTML */ `
+            <div class="toolbar">
+                <label for="file-select">사진</label>
+                <select id="file-select">
+                    ${st.dataset.images
+            .map(
+                (i) => /* HTML */ `
+                                <option ${st.file === i.filename ? 'selected' : ''}>
+                                    ${esc(i.filename)}
+                                </option>
+                            `
+            )
+            .join('')}
+                </select>
+                <label for="policy-select">정책</label>
+                <select id="policy-select">
+                    ${[...new Set(st.detail.results.map((r) => r.policy))]
+            .map(
+                (p) => /* HTML */ `
+                                <option ${st.policy === p ? 'selected' : ''}>${esc(p)}</option>
+                            `
+            )
+            .join('')}
+                </select>
+            </div>
+        `
+    );
+}
+const result = () =>
+    st.detail?.results.find((r) => r.filename === st.file && r.policy === st.policy);
+const original = () => st.dataset?.images.find((i) => i.filename === st.file);
+// ============================================================
+// 원본·결과 이미지 영역
+// ============================================================
+
+function photoPair() {
+    const r = result(),
+        i = original();
+    return /* HTML */ `
+        <section class="panel">
+            <div class="panelhead">
+                <h2>${esc(st.file)}</h2>
+                ${r ? badge(r.evaluation, r.evaluation !== 'Exact Match') : ''}
+            </div>
+            <div class="compare">
+                <div class="imagepane">
+                    <div class="imagehead">
+                        <span>원본 이미지</span>
+                        <span>정답 ${i?.groundTruth ?? '—'}개</span>
+                    </div>
+                    <div class="picture">
+                        ${
+        i
+            ? /* HTML */ `
+                                      <img
+                                          src="/api/images/original/${i.id}"
+                                          alt="원본 ${esc(st.file)}"
+                                          data-zoom="/api/images/original/${i.id}"
+                                      />
+                                  `
+            : ''
+    }
+                    </div>
+                </div>
+                <div class="imagepane">
+                    <div class="imagehead">
+                        <span>${esc(st.policy)} 결과</span>
+                        <span>예측 ${r?.detected ?? '평가 불가'}</span>
+                    </div>
+                    <div class="picture ${r?.imagePath ? '' : 'empty'}">
+                        ${
+        r?.imagePath
+            ? /* HTML */ `
+                                      <img
+                                          src="/api/images/result/${r.id}"
+                                          alt="모자이크 결과"
+                                          data-zoom="/api/images/result/${r.id}"
+                                      />
+                                  `
+            : '처리되지 않았거나 결과 이미지가 없습니다.'
+    }
+                    </div>
+                </div>
+            </div>
+            <div class="pad">
+                <span class="badge grey">${esc(r?.processingStatus || '결과 대기')}</span>
+                <small>${esc(i?.scene)} · ${esc(i?.note)}</small>
+            </div>
+        </section>
+    `;
+}
+// ============================================================
+// 이미지 비교 화면
+// ============================================================
+
+async function compare() {
+    if (!(await loadRun())) return empty('실험을 먼저 실행하세요.');
+    if (!st.detail.results.length)
+        return empty(
+            `결과를 생성 중이거나 실패했습니다. ${btn('실행 상태 보기', 'data-page="run"')}`
+        );
+    return (
+        heading(
+            'COMPARE',
+            '사진 한 장, 정책별 결과 비교.',
+            '이미지를 클릭하면 확대해서 확인할 수 있습니다.',
+            btn('검수하기', 'data-page="review"', true)
+        ) +
+        /* HTML */ `
+            <div class="policies">
+                ${summaries()
+            .map(
+                (p) => /* HTML */ `
+                            <button
+                                class="policy ${p.policy === st.policy ? 'active' : ''}"
+                                data-policy="${p.policy}"
+                            >
+                                ${esc(p.policy)}
+                                <b>${esc(p.exact_match_pct)}%</b>
+                                <small>
+                                    일치 ${p.exact} / 평가 ${p.evaluated} · 실패 ${p.failed}
+                                </small>
+                            </button>
+                        `
+            )
+            .join('')}
+            </div>
+        ` +
+        controls() +
+        photoPair() +
+        /* HTML */ `
+            <div class="actions">
+                ${btn('이전 사진', 'data-action="photo-prev"')}${btn('다음 사진', 'data-action="photo-next"')}${result() ? btn('후보 · 좌표 상세', `data-result-detail="${result().id}"`) : ''}
+            </div>
+            <p class="hint">
+                얼굴 개수 일치와 비식별화 품질은 별도입니다. 실제 얼굴의 누락·오탐을 검수하세요.
+            </p>
+        `
+    );
+}
+// ============================================================
+// 오답 분석 화면
+// ============================================================
+
+async function errorView() {
+    if (!(await loadRun())) return empty('실험을 먼저 실행하세요.');
+    let rows = st.detail.results;
+    const reviews = new Map(st.detail.reviews.map((r) => [r.resultId, r]));
+    rows = rows.filter((r) =>
+        st.filter === '전체'
+            ? r.evaluation !== 'Exact Match' || r.reviewRequired
+            : st.filter === '과다'
+                ? r.evaluation === 'Over-detection'
+                : st.filter === '과소'
+                    ? r.evaluation === 'Under-detection'
+                    : st.filter === '실패'
+                        ? r.detected === null
+                        : !reviews.get(r.id)?.done
+    );
+    return (
+        heading(
+            'ANALYSIS',
+            '차이가 난 사진을 확인하세요.',
+            '정답과 예측, 처리 실패, 아직 검수하지 않은 결과를 구분합니다.'
+        ) +
+        runPicker() +
+        /* HTML */ `
+            <div class="toolbar">
+                <select id="error-filter">
+                    ${['전체', '과다', '과소', '실패', '미검수']
+            .map(
+                (t) => /* HTML */ `
+                                <option ${t === st.filter ? 'selected' : ''}>${t}</option>
+                            `
+            )
+            .join('')}
+                </select>
+                <small>${rows.length}건</small>
+            </div>
+            <section class="panel">
+                <div class="tablewrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>사진</th>
+                                <th>정책</th>
+                                <th>정답</th>
+                                <th>예측</th>
+                                <th>평가 · 상태</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows
+            .map(
+                (r) => /* HTML */ `
+                                        <tr>
+                                            <td>
+                                                ${esc(r.filename)}
+                                                <br />
+                                                <small>${esc(r.scene)}</small>
+                                            </td>
+                                            <td>${esc(r.policy)}</td>
+                                            <td>${r.groundTruth}</td>
+                                            <td>${r.detected ?? '—'}</td>
+                                            <td>
+                                                ${badge(r.evaluation, r.evaluation !== 'Exact Match')}
+                                                <br />
+                                                <small>${esc(r.processingStatus)}</small>
+                                            </td>
+                                            <td>${btn('검수', `data-review-result="${r.id}"`)}</td>
+                                        </tr>
+                                    `
+            )
+            .join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        `
+    );
+}
+// ============================================================
+// 수동 검수 화면
+// ============================================================
+
+async function review() {
+    if (!(await loadRun())) return empty('실험을 먼저 실행하세요.');
+    const r = result();
+    if (!r) return empty('완료한 실험 결과가 없습니다.');
+    const v = st.detail.reviews.find((v) => v.resultId === r.id) || {};
+    return (
+        heading(
+            'MANUAL REVIEW',
+            '마지막 판단은 사람이 확인합니다.',
+            '검수는 현재 실험 · 정책 · 사진에만 저장됩니다.',
+            badge(v.done ? '검수 완료' : '검수 대기', !v.done)
+        ) +
+        controls() +
+        /* HTML */ `
+            <div class="grid2">
+                <div>${photoPair()}</div>
+                <section class="panel">
+                    <div class="panelhead">
+                        <h2>검수 기록</h2>
+                        <small>${esc(st.policy)}</small>
+                    </div>
+                    <form class="pad" id="review-form">
+                        <input type="hidden" name="resultId" value="${r.id}" />
+                        <div class="formgrid">
+                            <label class="field">
+                                누락 얼굴 수
+                                <input
+                                    name="missingFaces"
+                                    type="number"
+                                    value="${v.missingFaces || 0}"
+                                    min="0"
+                                    max="10000"
+                                    required
+                                />
+                            </label>
+                            <label class="field">
+                                오탐 얼굴 수
+                                <input
+                                    name="falseFaces"
+                                    type="number"
+                                    value="${v.falseFaces || 0}"
+                                    min="0"
+                                    max="10000"
+                                    required
+                                />
+                            </label>
+                            <label class="field full">
+                                모자이크 품질
+                                <select name="quality">
+                                    ${['적절함', '범위 부족', '추가 확인']
+            .map(
+                (t) => /* HTML */ `
+                                                <option ${v.quality === t ? 'selected' : ''}>
+                                                    ${t}
+                                                </option>
+                                            `
+            )
+            .join('')}
+                                </select>
+                            </label>
+                            <label class="field full">
+                                검수 의견
+                                <textarea name="note" maxlength="4000">
+${esc(v.note || '')}</textarea>
+                            </label>
+                        </div>
+                        <label class="check">
+                            <input type="checkbox" name="done" ${v.done ? 'checked' : ''} />
+                            원본과 결과를 비교해 검수를 완료했습니다.
+                        </label>
+                        <button class="primary" type="submit">검수 저장</button>
+                        <p class="hint">최종 저장: ${esc(v.updatedAt || '아직 저장하지 않음')}</p>
+                        ${st.detail.run.kind === 'compare' ? btn('검수 반영 · 분석만 재실행', 'data-action="analyze"') : ''}
+                        <p class="hint">
+                            보고서 갱신은 추론을 다시 하지 않습니다. 저장한 검수와 보고서 반영
+                            시점이 다를 수 있습니다.
+                        </p>
+                    </form>
+                </section>
+            </div>
+        `
+    );
+}
+// ============================================================
+// 보고서·보존 자료 화면
+// ============================================================
+
+async function reportsView() {
+    if (!(await loadRun())) return empty('실험을 먼저 실행하세요.');
+    const reports = st.detail.reports;
+    if (!reports.length)
+        return empty(`생성된 보고서가 없습니다. ${btn('실행 상태', 'data-page="run"')}`);
+    if (!st.report || !reports.some((r) => r.id === st.report)) st.report = reports[0].id;
+    const report = reports.find((r) => r.id === st.report),
+        files = await api('/reports/' + report.id + '/files');
+    return (
+        heading(
+            'REPORTS & ARCHIVE',
+            '결과와 과정을 함께 보관합니다.',
+            '이전 보고서 개정과 검수 반영 시점을 확인하세요.',
+            btn('기존 CLI 백업', 'data-action="archives"')
+        ) +
+        runPicker() +
+        /* HTML */ `
+            <div class="toolbar">
+                <label for="report-select">보고서 개정</label>
+                <select id="report-select">
+                    ${reports
+            .map(
+                (r) => /* HTML */ `
+                                <option value="${r.id}" ${r.id === st.report ? 'selected' : ''}>
+                                    r${r.revision} · ${r.createdAt.slice(0, 16)}
+                                </option>
+                            `
+            )
+            .join('')}
+                </select>
+                <a class="button" href="/api/reports/${report.id}/zip">실험 결과 ZIP 받기</a>
+            </div>
+            <section class="panel">
+                <div class="panelhead">
+                    <h2>산출물 · r${report.revision}</h2>
+                    ${badge(files.length + '개 파일')}
+                </div>
+                <div class="tablewrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>파일</th>
+                                <th>크기</th>
+                                <th>SHA-256</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${files
+            .map(
+                (a) => /* HTML */ `
+                                        <tr>
+                                            <td>${esc(a.path)}</td>
+                                            <td>${(a.size / 1024).toFixed(1)} KB</td>
+                                            <td><small>${a.sha256.slice(0, 12)}…</small></td>
+                                            <td><a href="/api/artifacts/${a.id}">다운로드</a></td>
+                                        </tr>
+                                    `
+            )
+            .join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <section class="panel">
+                <div class="panelhead"><h2>보존 · 검수 스냅샷</h2></div>
+                <div class="pad">
+                    <p>자료 출처: ${esc(st.detail.run.origin)}</p>
+                    <p>이전 실험: ${esc(st.detail.run.previousRunId || '없음')}</p>
+                    <p>보존 설명: ${esc(st.detail.run.previousNote)}</p>
+                    <p>반영된 검수 기록: ${JSON.parse(report.reviewSnapshot || '[]').length}건</p>
+                    <small>
+                        이전 보고서와 원본은 자동 삭제하지 않습니다. 장비 장애 대비 백업은 별도의
+                        백업 안내를 참고하세요.
+                    </small>
+                </div>
+            </section>
+        `
+    );
+}
+// ============================================================
+// 현재 화면 렌더링
+// ============================================================
+
+async function render() {
+    const fn = {
+        dashboard,
+        datasets,
+        programs,
+        history,
+        run: runView,
+        compare,
+        errors: errorView,
+        review,
+        reports: reportsView
+    }[st.page];
+    document
+        .querySelectorAll('nav button')
+        .forEach((b) => b.classList.toggle('active', b.dataset.page === st.page));
+    $('#crumb').textContent = names[st.page];
+    try {
+        $('#screen').innerHTML = await fn();
+        if (st.page === 'run') await showLog();
+    } catch (e) {
+        $('#screen').innerHTML = /* HTML */ `
+            <div class="error">${esc(e.message)}</div>
+        `;
+    }
+}
+// ============================================================
+// 작업 로그 표시
+// ============================================================
+
+async function showLog() {
+    const j = st.detail?.jobs[0];
+    if (j && $('#run-log')) $('#run-log').textContent = (await api('/jobs/' + j.id + '/log')).log;
+}
+// ============================================================
+// 상세 대화상자 표시
+// ============================================================
+
+function dialog(title, html) {
+    $('#detail-title').textContent = title;
+    $('#detail-body').innerHTML = html;
+    $('#detail').showModal();
+}
+$('#close-detail').onclick = () => $('#detail').close();
+// 클릭 이벤트 처리
+document.addEventListener('click', async (e) => {
+    const t = e.target.closest(
+        '[data-page],[data-run],[data-dataset],[data-action],[data-zoom],[data-policy],[data-result-detail],[data-review-result],[data-reimport]'
+    );
+    if (!t) return;
+    try {
+        if (t.dataset.zoom) {
+            dialog(
+                t.dataset.name || '이미지 확대',
+                /* HTML */ `
+                    <img src="${esc(t.dataset.zoom)}" alt="확대 이미지" />
+                `
+            );
+            return;
+        }
+        if (t.dataset.page) {
+            await navigate(t.dataset.page);
+            return;
+        }
+        if (t.dataset.run) {
+            st.run = t.dataset.run;
+            st.file = null;
+            await navigate('run');
+            return;
+        }
+        if (t.dataset.dataset) {
+            await showDataset(t.dataset.dataset);
+            return;
+        }
+        if (t.dataset.policy) {
+            st.policy = t.dataset.policy;
+            await render();
+            return;
+        }
+        if (t.dataset.resultDetail) {
+            const d = await api('/results/' + t.dataset.resultDetail + '/details');
+            dialog(
+                '후보 · 최종 얼굴 좌표',
+                /* HTML */ `
+                    <pre>${esc(JSON.stringify(d, null, 2))}</pre>
+                `
+            );
+            return;
+        }
+        if (t.dataset.reviewResult) {
+            const r = st.detail.results.find((r) => r.id === t.dataset.reviewResult);
+            st.file = r.filename;
+            st.policy = r.policy;
+            await navigate('review');
+            return;
+        }
+        if (t.dataset.reimport) {
+            await api('/jobs/' + t.dataset.reimport + '/reimport', 'POST');
+            await render();
+            return;
+        }
+        switch (t.dataset.action) {
+            case 'archives': {
+                const archives = await api('/legacy/backups');
+                dialog(
+                    '기존 CLI 백업',
+                    archives.length
+                        ? archives
+                            .map(
+                                (a) => /* HTML */ `
+                                      <section class="panel pad">
+                                          <h3>${esc(a.id)}</h3>
+                                          <p>${esc(a.note)}</p>
+                                          <small>${esc(a.origin)}</small>
+                                          <p>
+                                              <a href="/api/legacy/backups/${a.id}/zip">
+                                                  무결성 검증 후 ZIP 받기
+                                              </a>
+                                          </p>
+                                      </section>
+                                  `
+                            )
+                            .join('')
+                        : '첨부 프로젝트의 csv_backup 폴더에 보관된 스냅샷이 없습니다.'
+                );
+                break;
+            }
+            case 'sample':
+                t.disabled = true;
+                await api('/datasets/sample', 'POST');
+                await render();
+                notice('첨부 기준 사진과 정답표를 등록했습니다.');
+                break;
+            case 'analyze':
+                t.disabled = true;
+                await api('/runs/' + st.run + '/analyze', 'POST');
+                await navigate('run');
+                notice('분석 작업을 등록했습니다.');
+                break;
+            case 'log':
+                await showLog();
+                break;
+            case 'clone':
+                st.requestId = crypto.randomUUID();
+                st.page = 'programs';
+                $('#screen').innerHTML = await programs(st.detail.run);
+                break;
+            case 'search':
+                st.query = $('#history-query').value;
+                st.pageNo = 0;
+                await render();
+                break;
+            case 'prev':
+                st.pageNo = Math.max(0, st.pageNo - 1);
+                await render();
+                break;
+            case 'next':
+                if (
+                    (st.pageNo + 1) * 10 <
+                    st.runs.filter((r) =>
+                        (r.title + ' ' + r.note + ' ' + r.id)
+                            .toLowerCase()
+                            .includes(st.query.toLowerCase())
+                    ).length
+                )
+                    st.pageNo++;
+                await render();
+                break;
+            case 'photo-prev':
+            case 'photo-next': {
+                const list = st.dataset.images,
+                    index = list.findIndex((i) => i.filename === st.file),
+                    step = t.dataset.action === 'photo-next' ? 1 : -1;
+                st.file = list[(index + step + list.length) % list.length].filename;
+                await render();
+                break;
+            }
+        }
+    } catch (e) {
+        notice(e.message, true);
+        t.disabled = false;
+    }
+});
+// 선택값 변경 이벤트 처리
+document.addEventListener('change', async (e) => {
+    try {
+        if (e.target.id === 'run-select') {
+            st.run = e.target.value;
+            st.file = null;
+            st.report = null;
+            await render();
+        }
+        if (e.target.id === 'file-select') {
+            st.file = e.target.value;
+            await render();
+        }
+        if (e.target.id === 'policy-select') {
+            st.policy = e.target.value;
+            await render();
+        }
+        if (e.target.id === 'error-filter') {
+            st.filter = e.target.value;
+            await render();
+        }
+        if (e.target.id === 'report-select') {
+            st.report = e.target.value;
+            await render();
+        }
+    } catch (e) {
+        notice(e.message, true);
+    }
+});
+// 폼 제출 처리
+document.addEventListener('submit', async (e) => {
+    if (
+        !['run-form', 'dataset-form', 'version-form', 'review-form', 'analysis-form'].includes(
+            e.target.id
+        )
+    )
+        return;
+    e.preventDefault();
+    const form = e.target,
+        button = form.querySelector('button[type=submit]');
+    button.disabled = true;
+    try {
+        const data = new FormData(form);
+        if (form.id === 'analysis-form') {
+            st.run = data.get('runId');
+            if (!st.run) throw Error('완료한 4정책 실험을 선택하세요.');
+            await api('/runs/' + st.run + '/analyze', 'POST');
+            await navigate('run');
+        } else if (form.id === 'run-form') {
+            const body = Object.fromEntries(data);
+            body.requestId = st.requestId;
+            body.preserve = data.has('preserve');
+            body.settings = {};
+            if (body.kind === 'compare')
+                for (const key of [
+                    'YOLO_CONFIDENCE',
+                    'YOLO_IMAGE_SIZE',
+                    'MIN_FACE_SIZE',
+                    'MOSAIC_SIZE',
+                    'FACE_PADDING_RATIO'
+                ])
+                    body.settings[key] = Number(data.get(key));
+            const r = await api('/runs', 'POST', body);
+            st.run = r.id;
+            st.requestId = crypto.randomUUID();
+            await refresh();
+            await navigate('run');
+        } else if (form.id === 'review-form') {
+            const body = Object.fromEntries(data);
+            body.done = data.has('done');
+            body.missingFaces = Number(body.missingFaces);
+            body.falseFaces = Number(body.falseFaces);
+            await api('/results/' + body.resultId + '/review', 'PUT', body);
+            await render();
+            notice('검수 내용을 DB에 저장했습니다.');
+        } else {
+            const d = await api('/datasets', 'POST', data);
+            await render();
+            await showDataset(d.id);
+            notice('검증과 DB 저장을 완료했습니다.');
+        }
+    } catch (e) {
+        notice(e.message, true);
+        button.disabled = false;
+    }
+});
+// 환경 점검 버튼
+$('#health').onclick = async () => {
+    try {
+        dialog(
+            '환경 점검',
+            /* HTML */ `
+                <pre>${esc(JSON.stringify(await api('/health'), null, 2))}</pre>
+            `
+        );
+    } catch (e) {
+        notice(e.message, true);
+    }
+};
+// 작업 상태 주기적 갱신
+setInterval(async () => {
+    if (polling || !['run', 'dashboard', 'history'].includes(st.page)) return;
+    polling = true;
+    try {
+        if (st.page === 'run' && st.detail && activeJobs().length) {
+            await render();
+        } else if (
+            st.page === 'dashboard' &&
+            st.runs.some((r) => ['QUEUED', 'RUNNING', 'IMPORTING'].includes(r.status))
+        ) {
+            await render();
+        }
+    } catch (e) {
+        notice(e.message, true);
+    } finally {
+        polling = false;
+    }
+}, 2500);
 render();
