@@ -1,0 +1,138 @@
+[기존 결과 발견] 파일 107개
+기존 결과를 백업하시겠습니까? [Y/N, 기본 취소]: 백업할 이전 실험에 대한 주석을 입력하세요: [백업 완료] /workspace/scratch/f962a90d4931/verification/cli-reference/csv_backup/20261107_214000_561953e1 (107개 파일 SHA-256 확인)
+새 실험 목적·변경사항을 입력하세요: DeepSight YOLOv8-Face + Haar Cascade — PDCA v2
+입력: /workspace/scratch/f962a90d4931/verification/cli-reference/data/images / 모델: /workspace/scratch/f962a90d4931/verification/cli-reference/shared/models/yolov8n-face-lindevs.pt
+[안내] 실험 결과 보존을 위해 scripts/run_experiment.py --compare 사용을 권장합니다.
+[1/20] img_001.jpg
+  YOLO 검출: 1, Haar 검출: 0
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 0개 / processed_no_face
+  improved: 최종 1개 / processed_detected
+[2/20] img_002.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[3/20] img_003.jpg
+  YOLO 검출: 0, Haar 검출: 0
+  legacy: 최종 0개 / processed_no_face
+  yolo_only: 최종 0개 / processed_no_face
+  haar_only: 최종 0개 / processed_no_face
+  improved: 최종 0개 / processed_no_face
+[4/20] img_004.jpg
+  YOLO 검출: 4, Haar 검출: 5
+  legacy: 최종 4개 / processed_detected
+  yolo_only: 최종 4개 / processed_detected
+  haar_only: 최종 5개 / processed_detected
+  improved: 최종 4개 / processed_detected
+[5/20] img_005.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[6/20] img_006.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[7/20] img_007.jpg
+  YOLO 검출: 2, Haar 검출: 1
+  legacy: 최종 2개 / processed_detected
+  yolo_only: 최종 2개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 2개 / processed_detected
+[8/20] img_008.jpg
+  YOLO 검출: 1, Haar 검출: 2
+  legacy: 최종 2개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 2개 / processed_detected
+  improved: 최종 1개 / processed_detected / 수동 검토 필요
+[9/20] img_009.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[10/20] img_010.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[11/20] img_011.jpg
+  YOLO 검출: 0, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 0개 / processed_no_face
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected / 수동 검토 필요
+[12/20] img_012.jpg
+  YOLO 검출: 1, Haar 검출: 4
+  legacy: 최종 3개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 4개 / processed_detected
+  improved: 최종 1개 / processed_detected / 수동 검토 필요
+[13/20] img_013.jpg
+  YOLO 검출: 0, Haar 검출: 0
+  legacy: 최종 0개 / processed_no_face
+  yolo_only: 최종 0개 / processed_no_face
+  haar_only: 최종 0개 / processed_no_face
+  improved: 최종 0개 / processed_no_face
+[14/20] img_014.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[15/20] img_015.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[16/20] img_016.jpg
+  YOLO 검출: 1, Haar 검출: 0
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 0개 / processed_no_face
+  improved: 최종 1개 / processed_detected
+[17/20] img_017.jpg
+  YOLO 검출: 0, Haar 검출: 2
+  legacy: 최종 2개 / processed_detected
+  yolo_only: 최종 0개 / processed_no_face
+  haar_only: 최종 2개 / processed_detected
+  improved: 최종 2개 / processed_detected / 수동 검토 필요
+[18/20] img_018.jpg
+  YOLO 검출: 1, Haar 검출: 1
+  legacy: 최종 1개 / processed_detected
+  yolo_only: 최종 1개 / processed_detected
+  haar_only: 최종 1개 / processed_detected
+  improved: 최종 1개 / processed_detected
+[19/20] img_019.jpg
+  YOLO 검출: 4, Haar 검출: 5
+  legacy: 최종 4개 / processed_detected
+  yolo_only: 최종 4개 / processed_detected
+  haar_only: 최종 5개 / processed_detected
+  improved: 최종 4개 / processed_detected
+[20/20] img_020.jpg
+  YOLO 검출: 3, Haar 검출: 3
+  legacy: 최종 3개 / processed_detected
+  yolo_only: 최종 3개 / processed_detected
+  haar_only: 최종 3개 / processed_detected
+  improved: 최종 3개 / processed_detected
+legacy: {'total': 20, 'evaluated': 20, 'exact': 15, 'over': 4, 'under': 1, 'failed': 0, 'exact_match_pct': 75.0}
+yolo_only: {'total': 20, 'evaluated': 20, 'exact': 19, 'over': 0, 'under': 1, 'failed': 0, 'exact_match_pct': 95.0}
+haar_only: {'total': 20, 'evaluated': 20, 'exact': 10, 'over': 6, 'under': 4, 'failed': 0, 'exact_match_pct': 50.0}
+improved: {'total': 20, 'evaluated': 20, 'exact': 17, 'over': 2, 'under': 1, 'failed': 0, 'exact_match_pct': 85.0}
+[완료] legacy: 15/20 일치 (75.0%)
+[완료] yolo_only: 19/20 일치 (95.0%)
+[완료] haar_only: 10/20 일치 (50.0%)
+[완료] improved: 17/20 일치 (85.0%)
+[완료] 4개 정책 분석 및 종합표 생성
+[새 실험] 20261107_214000_8417a556; 모델=yolov8n-face-lindevs.pt, min_face=30, conf=0.2
+[완료] 4개 정책 실행 및 분석 성공; 실험 ID: 20261107_214000_8417a556
+
+REGRESSION_OK 16 CSV tables + 80 result images SHA256 exact match

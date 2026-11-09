@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="kr.deepsight.WorkflowTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-07T12:52:44.053Z" hostname="a610dada24e1" time="79.785">
+  <properties/>
+  <testcase name="actualPythonWorkflow()" classname="kr.deepsight.WorkflowTest" time="79.54"/>
+  <testcase name="webAndDatabaseStart()" classname="kr.deepsight.WorkflowTest" time="0.23"/>
+  <testcase name="detectCorruptedArtifacts()" classname="kr.deepsight.WorkflowTest" time="0.003"/>
+  <testcase name="pathAndNameChecks()" classname="kr.deepsight.WorkflowTest" time="0.004"/>
+  <system-out><![CDATA[21:52:37.499 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [kr.deepsight.WorkflowTest]: WorkflowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:52:37.670 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration kr.deepsight.Application for test class kr.deepsight.WorkflowTest
+21:52:37.759 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [kr.deepsight.WorkflowTest]: WorkflowTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+21:52:37.761 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration kr.deepsight.Application for test class kr.deepsight.WorkflowTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.9)
+
+2026-11-07T21:52:38.280+09:00  INFO 216 --- [    Test worker] kr.deepsight.WorkflowTest                : Starting WorkflowTest using Java 17.0.21 with PID 216 (started by root in /workspace/scratch/f962a90d4931/project/DeepSight_Web/web)
+2026-11-07T21:52:38.282+09:00  INFO 216 --- [    Test worker] kr.deepsight.WorkflowTest                : No active profile set, falling back to 1 default profile: "default"
+2026-11-07T21:52:39.088+09:00  INFO 216 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-07T21:52:39.164+09:00  INFO 216 --- [    Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 66 ms. Found 10 JPA repository interfaces.
+2026-11-07T21:52:39.737+09:00  INFO 216 --- [    Test worker] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 0 (http)
+2026-11-07T21:52:39.754+09:00  INFO 216 --- [    Test worker] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-11-07T21:52:39.754+09:00  INFO 216 --- [    Test worker] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.27]
+2026-11-07T21:52:39.833+09:00  INFO 216 --- [    Test worker] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 1514 ms
+2026-11-07T21:52:40.271+09:00  INFO 216 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-07T21:52:40.487+09:00  INFO 216 --- [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:ds user=SA
+2026-11-07T21:52:40.491+09:00  INFO 216 --- [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-07T21:52:40.549+09:00  INFO 216 --- [    Test worker] org.flywaydb.core.FlywayExecutor         : Database: jdbc:h2:mem:ds (H2 2.4)
+2026-11-07T21:52:40.560+09:00  WARN 216 --- [    Test worker] o.f.c.internal.database.base.Database    : Using H2 2.4.240 which is newer than the version Flyway has been verified with. The latest verified version of H2 is 2.3.232.
+2026-11-07T21:52:40.592+09:00  INFO 216 --- [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+2026-11-07T21:52:40.595+09:00  INFO 216 --- [    Test worker] o.f.core.internal.command.DbValidate     : Successfully validated 1 migration (execution time 00:00.013s)
+2026-11-07T21:52:40.603+09:00  INFO 216 --- [    Test worker] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+2026-11-07T21:52:40.653+09:00  INFO 216 --- [    Test worker] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+2026-11-07T21:52:40.665+09:00  INFO 216 --- [    Test worker] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - initial"
+2026-11-07T21:52:40.705+09:00  INFO 216 --- [    Test worker] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "public", now at version v1 (execution time 00:00.023s)
+2026-11-07T21:52:41.605+09:00  INFO 216 --- [    Test worker] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-07T21:52:42.851+09:00  INFO 216 --- [    Test worker] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-07T21:52:42.942+09:00  INFO 216 --- [    Test worker] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-11-07T21:52:43.604+09:00  INFO 216 --- [    Test worker] o.s.b.w.a.WelcomePageHandlerMapping      : Adding welcome page template: index
+2026-11-07T21:52:44.034+09:00  INFO 216 --- [    Test worker] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 44241 (http) with context path '/'
+2026-11-07T21:52:44.045+09:00  INFO 216 --- [    Test worker] kr.deepsight.WorkflowTest                : Started WorkflowTest in 6.209 seconds (process running for 8.19)
+2026-11-07T21:53:05.808+09:00  INFO 216 --- [1-auto-1-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-11-07T21:53:05.809+09:00  INFO 216 --- [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-11-07T21:53:05.812+09:00  INFO 216 --- [1-auto-1-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

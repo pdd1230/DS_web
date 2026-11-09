@@ -1,0 +1,34 @@
+[
+  {
+    "file": "Backup.ps1",
+    "errors": []
+  },
+  {
+    "file": "Environment.ps1",
+    "errors": []
+  },
+  {
+    "file": "Setup.ps1",
+    "errors": []
+  },
+  {
+    "file": "Start.ps1",
+    "errors": []
+  },
+  {
+    "file": "Status.ps1",
+    "errors": []
+  },
+  {
+    "file": "Stop.ps1",
+    "errors": []
+  },
+  {
+    "file": "Test.ps1",
+    "errors": []
+  }
+]
+
+Backup complete: /workspace/scratch/f962a90d4931/verification/powershell-backup-fixture/relative backup 6da303. Copy it to a separate drive.
+
+{"status": "PASS", "environment": "PowerShell 7.4.13 on Linux; Windows execution not tested", "syntaxFiles": 7, "contracts": ["relative destination containing spaces", "relative manifest paths resolve to files", "existing backup rejected", "nested storage backup rejected"], "dump": "mock command for filesystem contract only; actual MySQL dump is tested separately"}

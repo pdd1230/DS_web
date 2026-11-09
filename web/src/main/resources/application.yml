@@ -1,0 +1,28 @@
+server:
+  address: ${DS_BIND:127.0.0.1}
+  port: ${DS_WEB_PORT:8080}
+spring:
+  datasource:
+    url: ${DS_DB_URL:jdbc:mysql://127.0.0.1:3306/deepsight_web?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul}
+    username: ${DS_DB_USER:deepsight}
+    password: ${DS_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 250MB
+  thymeleaf:
+    cache: false
+logging:
+  level:
+    org.hibernate: warn
+ds:
+  home: ${DS_HOME:..}
+  storage: ${DS_STORAGE:../storage}
+  python: ${DS_PYTHON_URL:http://127.0.0.1:8090}
+  key: ${DS_API_KEY:}

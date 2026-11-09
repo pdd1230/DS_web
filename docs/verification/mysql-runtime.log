@@ -1,0 +1,10 @@
+PASS Real MySQL started
+PASS MySQL Flyway migration and Hibernate schema validation
+PASS Dataset registration
+PASS Actual 20-image four-policy inference into MySQL
+PASS Review and report revision stored
+PASS Result image and ZIP HTTP downloads
+PASS Spring restart persistence
+PASS MySQL dump and storage restored into separate database
+PASS Restored database and files serve identical image and records
+{"status": "PASS", "environment": "Linux, MySQL 8.4.11, JDK17, Spring Boot4.0.9, Python3.11.9 CPU", "steps": [{"name": "Real MySQL started", "status": "PASS", "version": "8.4.11"}, {"name": "MySQL Flyway migration and Hibernate schema validation", "status": "PASS", "tables": "11"}, {"name": "Dataset registration", "status": "PASS", "id": "e4508bb4-b05f-4b7a-ae62-78cc846ce532"}, {"name": "Actual 20-image four-policy inference into MySQL", "status": "PASS", "results": 80}, {"name": "Review and report revision stored", "status": "PASS", "reports": 2, "reviews": 1}, {"name": "Result image and ZIP HTTP downloads", "status": "PASS", "imageBytes": 77532, "zipBytes": 6335549}, {"name": "Spring restart persistence", "status": "PASS", "results": 80, "reviews": 1, "reports": 2}, {"name": "MySQL dump and storage restored into separate database", "status": "PASS", "dumpBytes": 201801}, {"name": "Restored database and files serve identical image and records", "status": "PASS", "results": 80, "reviews": 1, "reports": 2}]}

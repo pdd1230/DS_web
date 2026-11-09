@@ -1,0 +1,267 @@
+==================================================
+     Haar Cascade 얼굴 모자이크 프로그램
+==================================================
+입력 폴더: /workspace/scratch/f962a90d4931/verification/storage/runs/check-initial/work/data/images
+출력 폴더: /workspace/scratch/f962a90d4931/verification/storage/runs/check-initial/work/outputs/first
+
+총 20개 이미지 처리 시작
+
+[1/20] img_001.jpg
+  -> 저장 완료: img_001_mosaic.jpg | 검출 얼굴: 0개
+
+[2/20] img_002.jpg
+  -> 저장 완료: img_002_mosaic.jpg | 검출 얼굴: 1개
+
+[3/20] img_003.jpg
+  -> 저장 완료: img_003_mosaic.jpg | 검출 얼굴: 0개
+
+[4/20] img_004.jpg
+  -> 저장 완료: img_004_mosaic.jpg | 검출 얼굴: 3개
+
+[5/20] img_005.jpg
+  -> 저장 완료: img_005_mosaic.jpg | 검출 얼굴: 1개
+
+[6/20] img_006.jpg
+  -> 저장 완료: img_006_mosaic.jpg | 검출 얼굴: 1개
+
+[7/20] img_007.jpg
+  -> 저장 완료: img_007_mosaic.jpg | 검출 얼굴: 0개
+
+[8/20] img_008.jpg
+  -> 저장 완료: img_008_mosaic.jpg | 검출 얼굴: 1개
+
+[9/20] img_009.jpg
+  -> 저장 완료: img_009_mosaic.jpg | 검출 얼굴: 1개
+
+[10/20] img_010.jpg
+  -> 저장 완료: img_010_mosaic.jpg | 검출 얼굴: 1개
+
+[11/20] img_011.jpg
+  -> 저장 완료: img_011_mosaic.jpg | 검출 얼굴: 1개
+
+[12/20] img_012.jpg
+  -> 저장 완료: img_012_mosaic.jpg | 검출 얼굴: 3개
+
+[13/20] img_013.jpg
+  -> 저장 완료: img_013_mosaic.jpg | 검출 얼굴: 0개
+
+[14/20] img_014.jpg
+  -> 저장 완료: img_014_mosaic.jpg | 검출 얼굴: 0개
+
+[15/20] img_015.jpg
+  -> 저장 완료: img_015_mosaic.jpg | 검출 얼굴: 1개
+
+[16/20] img_016.jpg
+  -> 저장 완료: img_016_mosaic.jpg | 검출 얼굴: 0개
+
+[17/20] img_017.jpg
+  -> 저장 완료: img_017_mosaic.jpg | 검출 얼굴: 0개
+
+[18/20] img_018.jpg
+  -> 저장 완료: img_018_mosaic.jpg | 검출 얼굴: 1개
+
+[19/20] img_019.jpg
+  -> 저장 완료: img_019_mosaic.jpg | 검출 얼굴: 1개
+
+[20/20] img_020.jpg
+  -> 저장 완료: img_020_mosaic.jpg | 검출 얼굴: 2개
+
+==================================================
+작업 완료
+전체 이미지: 20개
+성공: 20개
+실패: 0개
+저장 위치: /workspace/scratch/f962a90d4931/verification/storage/runs/check-initial/work/outputs/first
+==================================================
+CHECK_OK initial 20 runs/check-initial/reports/r0001
+============================================================
+YOLOv8-Face + Haar Cascade 얼굴 모자이크
+============================================================
+프로젝트 경로: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work
+입력 폴더: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/data/images
+출력 폴더: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/outputs/second-baseline
+YOLO 모델: /workspace/scratch/f962a90d4931/project/DeepSight_Web/legacy/shared/models/yolov8n-face-lindevs.pt
+좌표 CSV: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/outputs/second-baseline/face_mosaic_results.csv
+[완료] Haar Cascade 모델 로드 성공
+[완료] YOLOv8-Face 모델 로드 성공
+
+[1/20] img_001.jpg
+  YOLO 검출: 1개
+  Haar 검출: 0개
+  최종 검출: 1개
+    Face 1: x=87, y=46, w=213, h=350
+  -> 저장 완료: img_001_mosaic.jpg
+
+[2/20] img_002.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=127, y=138, w=72, h=93
+  -> 저장 완료: img_002_mosaic.jpg
+
+[3/20] img_003.jpg
+  YOLO 검출: 0개
+  Haar 검출: 0개
+  최종 검출: 0개
+  -> 저장 완료: img_003_mosaic.jpg
+
+[4/20] img_004.jpg
+  YOLO 검출: 4개
+  Haar 검출: 5개
+  최종 검출: 4개
+    Face 1: x=449, y=42, w=77, h=109
+    Face 2: x=148, y=77, w=63, h=76
+    Face 3: x=332, y=98, w=55, h=79
+    Face 4: x=232, y=99, w=57, h=75
+  -> 저장 완료: img_004_mosaic.jpg
+
+[5/20] img_005.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=106, y=136, w=145, h=215
+  -> 저장 완료: img_005_mosaic.jpg
+
+[6/20] img_006.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=145, y=157, w=94, h=133
+  -> 저장 완료: img_006_mosaic.jpg
+
+[7/20] img_007.jpg
+  YOLO 검출: 0개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=358, y=152, w=50, h=50
+  -> 저장 완료: img_007_mosaic.jpg
+
+[8/20] img_008.jpg
+  YOLO 검출: 1개
+  Haar 검출: 2개
+  최종 검출: 2개
+    Face 1: x=158, y=96, w=114, h=151
+    Face 2: x=391, y=426, w=52, h=52
+  -> 저장 완료: img_008_mosaic.jpg
+
+[9/20] img_009.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=56, y=141, w=195, h=260
+  -> 저장 완료: img_009_mosaic.jpg
+
+[10/20] img_010.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=90, y=133, w=222, h=270
+  -> 저장 완료: img_010_mosaic.jpg
+
+[11/20] img_011.jpg
+  YOLO 검출: 0개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=47, y=231, w=60, h=60
+  -> 저장 완료: img_011_mosaic.jpg
+
+[12/20] img_012.jpg
+  YOLO 검출: 1개
+  Haar 검출: 4개
+  최종 검출: 3개
+
+[img_012 상세 분석]
+YOLO 좌표: [(81, 110, 160, 230)]
+Haar 좌표: [(22, 114, 232, 232), (142, 171, 134, 134), (133, 357, 94, 94), (145, 484, 89, 89)]
+최종 좌표: [(81, 110, 160, 230), (133, 357, 94, 94), (145, 484, 89, 89)]
+    Face 1: x=81, y=110, w=160, h=230
+    Face 2: x=133, y=357, w=94, h=94
+    Face 3: x=145, y=484, w=89, h=89
+  -> 저장 완료: img_012_mosaic.jpg
+
+[13/20] img_013.jpg
+  YOLO 검출: 0개
+  Haar 검출: 0개
+  최종 검출: 0개
+  -> 저장 완료: img_013_mosaic.jpg
+
+[14/20] img_014.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=148, y=126, w=78, h=98
+  -> 저장 완료: img_014_mosaic.jpg
+
+[15/20] img_015.jpg
+  YOLO 검출: 1개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=161, y=82, w=80, h=112
+  -> 저장 완료: img_015_mosaic.jpg
+
+[16/20] img_016.jpg
+  YOLO 검출: 1개
+  Haar 검출: 0개
+  최종 검출: 1개
+    Face 1: x=167, y=169, w=170, h=202
+  -> 저장 완료: img_016_mosaic.jpg
+
+[17/20] img_017.jpg
+  YOLO 검출: 0개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=21, y=329, w=54, h=54
+  -> 저장 완료: img_017_mosaic.jpg
+
+[18/20] img_018.jpg
+  YOLO 검출: 0개
+  Haar 검출: 1개
+  최종 검출: 1개
+    Face 1: x=153, y=226, w=68, h=68
+  -> 저장 완료: img_018_mosaic.jpg
+
+[19/20] img_019.jpg
+  YOLO 검출: 0개
+  Haar 검출: 4개
+  최종 검출: 4개
+    Face 1: x=118, y=120, w=60, h=60
+    Face 2: x=315, y=138, w=60, h=60
+    Face 3: x=222, y=148, w=56, h=56
+    Face 4: x=453, y=150, w=60, h=60
+  -> 저장 완료: img_019_mosaic.jpg
+
+[20/20] img_020.jpg
+  YOLO 검출: 0개
+  Haar 검출: 3개
+  최종 검출: 3개
+    Face 1: x=484, y=78, w=61, h=61
+    Face 2: x=246, y=86, w=57, h=57
+    Face 3: x=398, y=95, w=61, h=61
+  -> 저장 완료: img_020_mosaic.jpg
+
+============================================================
+작업 완료
+============================================================
+전체 이미지: 20개
+총 검출 얼굴 수: 29개
+결과 이미지 폴더: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/outputs/second-baseline
+좌표 CSV: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/outputs/second-baseline/face_mosaic_results.csv
+============================================================
+
+============================================================
+모자이크 처리 성능 평가 결과
+============================================================
+평가 대상 이미지 수: 20개
+과검출: 4개
+미검출: 2개
+평가 결과 저장: /workspace/scratch/f962a90d4931/verification/storage/runs/check-baseline/work/outputs/second-baseline/evaluation_results.csv
+============================================================
+CHECK_OK baseline 20 runs/check-baseline/reports/r0001
+[완료] legacy: 15/20 일치 (75.0%)
+[완료] yolo_only: 19/20 일치 (95.0%)
+[완료] haar_only: 10/20 일치 (50.0%)
+[완료] improved: 17/20 일치 (85.0%)
+[완료] 4개 정책 분석 및 종합표 생성
+CHECK_OK import_compare 80 runs/check-import_compare/reports/r0001
+CHECK_OK import_initial 20 runs/check-import_initial/reports/r0001
+CHECK_OK import_baseline 20 runs/check-import_baseline/reports/r0001

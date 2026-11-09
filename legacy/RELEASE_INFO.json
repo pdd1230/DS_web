@@ -1,0 +1,11 @@
+{
+  "release": "v2.1",
+  "date": "2026-11-07",
+  "scope": "A-stage documentation and packaging; D1 functional code unchanged",
+  "source_zip": "DeepSight_v2_D1_통합구현_프로젝트.zip",
+  "windows_latest_csv_included": false,
+  "tests": {
+    "integration": 11,
+    "logic": 6
+  }
+}

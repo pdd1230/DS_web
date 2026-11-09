@@ -1,0 +1,36 @@
+........................                                                 [100%]
+=============================== warnings summary ===============================
+project/DeepSight_Web/python_service/.venv/lib/python3.11/site-packages/starlette/testclient.py:37
+  /workspace/scratch/f962a90d4931/project/DeepSight_Web/python_service/.venv/lib/python3.11/site-packages/starlette/testclient.py:37: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+project/DeepSight_Web/python_service/tests/test_api.py::test_internal_auth_and_path_validation
+  /workspace/scratch/f962a90d4931/project/DeepSight_Web/python_service/app.py:52: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event('startup')
+
+project/DeepSight_Web/python_service/tests/test_api.py::test_internal_auth_and_path_validation
+project/DeepSight_Web/python_service/tests/test_api.py::test_internal_auth_and_path_validation
+  /workspace/scratch/f962a90d4931/project/DeepSight_Web/python_service/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+project/DeepSight_Web/python_service/tests/test_api.py::test_internal_auth_and_path_validation
+  /workspace/scratch/f962a90d4931/project/DeepSight_Web/python_service/app.py:59: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event('shutdown')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+24 passed, 5 warnings in 1.46s

@@ -1,0 +1,38 @@
+# 실제 설정 및 인증 정보
+config.ps1
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# IntelliJ 실행 설정
+.idea/
+.run/
+*.iml
+pip
+# 로컬 실행 자료
+storage/
+logs/
+backups/
+.venv/
+python_service/.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+web/.gradle/
+web/build/
+build-verification/
+
+# 원본 사진과 기존 실행 결과
+legacy/data/
+legacy/outputs/
+legacy/reviews/
+
+# 학생 이름이 포함된 회의록
+legacy/*회의록*
+
+# DB 덤프는 별도 폴더로 관리
+db-dumps/

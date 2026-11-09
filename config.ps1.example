@@ -1,0 +1,9 @@
+# Copy to config.ps1 (Setup.ps1 does this automatically), then enter your DB password.
+$env:DS_DB_HOST = '127.0.0.1'
+$env:DS_DB_PORT = '3306'
+$env:DS_DB_NAME = 'deepsight_web'
+$env:DS_DB_USER = 'deepsight'
+$env:DS_DB_PASSWORD = 'CHANGE_ME'
+$env:DS_WEB_PORT = '8080'
+$env:DS_PYTHON_PORT = '8090'
+# DS_API_KEY is generated automatically in config.ps1 by Setup.ps1.

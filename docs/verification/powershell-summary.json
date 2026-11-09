@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "environment": "PowerShell 7.4.13 on Linux; Windows execution not tested",
+  "syntaxFiles": 7,
+  "contracts": [
+    "relative destination containing spaces",
+    "relative manifest paths resolve to files",
+    "existing backup rejected",
+    "nested storage backup rejected"
+  ],
+  "dump": "mock command for filesystem contract only; actual MySQL dump is tested separately"
+}
